@@ -197,3 +197,61 @@ export interface TreeRow {
 /** The tree's own scroller, the element that proves it virtualises. */
 export const TREE_SCROLLER = `document.querySelector('file-tree-container').shadowRoot
   .querySelector('[data-file-tree-virtualized-scroll]')`
+
+/**
+ * The diff pane's own scroller, the element CodeView computes its window from.
+ *
+ * Scoped to `.diff` on purpose: the sidebar scrolls too, and searching the whole
+ * document silently returned the file tree instead.
+ */
+export const DIFF_SCROLLER = `(() => {
+  const pane = document.querySelector('.diff')
+  if (!pane) return null
+  return [pane, ...pane.querySelectorAll('*')].find((el) => {
+    const cs = getComputedStyle(el)
+    return (cs.overflowY === 'auto' || cs.overflowY === 'scroll') &&
+           el.scrollHeight > el.clientHeight + 20
+  }) ?? null
+})()`
+
+/** Names of the files mounted right now, read from each file's own shadow root. */
+const DIFF_TITLES = `(() => {
+  const pane = document.querySelector('.diff')
+  if (!pane) return []
+  return [...pane.querySelectorAll('diffs-container')].map((host) =>
+    (host.shadowRoot?.querySelector('[data-title]')?.textContent ?? '').trim(),
+  )
+})()`
+
+/**
+ * Every file the diff pane renders, not only the mounted window.
+ *
+ * Proving a file is *absent* is what this is for, and absence from the DOM at
+ * one scroll position proves nothing — the pane virtualises, so a file can be
+ * missing merely for sitting below the fold. The step stays under one viewport
+ * so no file can slip between two samples.
+ */
+export async function allDiffFiles(page: Page): Promise<string[]> {
+  const seen = new Set<string>()
+  const collect = async () => {
+    for (const name of (await page.evaluate(DIFF_TITLES)) as string[]) if (name) seen.add(name)
+  }
+
+  const box = (await page.evaluate(`(() => {
+    const el = ${DIFF_SCROLLER}
+    return el ? { height: el.scrollHeight, viewport: el.clientHeight } : null
+  })()`)) as { height: number; viewport: number } | null
+
+  await collect()
+  if (!box) return [...seen]
+
+  const step = Math.max(200, Math.round(box.viewport * 0.8))
+  for (let top = 0; top <= box.height; top += step) {
+    await page.evaluate(`(() => { const el = ${DIFF_SCROLLER}; if (el) el.scrollTop = ${top} })()`)
+    await sleep(180)
+    await collect()
+  }
+  await page.evaluate(`(() => { const el = ${DIFF_SCROLLER}; if (el) el.scrollTop = 0 })()`)
+  await sleep(200)
+  return [...seen]
+}

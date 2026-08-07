@@ -6,8 +6,9 @@ import resize from './suites/resize.ts'
 import viewed from './suites/viewed.ts'
 import pickers from './suites/pickers.ts'
 import scroll from './suites/scroll.ts'
+import generated from './suites/generated.ts'
 
-const SUITES: Suite[] = [tree, resize, viewed, pickers, scroll]
+const SUITES: Suite[] = [tree, resize, viewed, pickers, scroll, generated]
 
 const only = process.argv.slice(2).filter((arg) => !arg.startsWith('-'))
 const selected = only.length > 0 ? SUITES.filter((s) => only.includes(s.name)) : SUITES

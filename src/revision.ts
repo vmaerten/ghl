@@ -14,6 +14,7 @@ import {
   untrackedPatch,
   writeConfig,
 } from './git.ts'
+import { detectGenerated } from './generated.ts'
 import type { BaseResolution, FileStat, PatchResult, Totals } from './types.ts'
 
 // Remote first: it is the shared truth. Local names cover repositories with no
@@ -159,9 +160,14 @@ export async function buildPatch(
   const tracked = await diffFromMergeBase(repoPath, base, { target })
   const counts = await numstat(repoPath, base, target)
   const statuses = await nameStatus(repoPath, base, target)
+  const generated = await detectGenerated(
+    repoPath,
+    counts.map((file) => file.path),
+  )
   const files: FileStat[] = counts.map((file) => ({
     ...file,
     status: statuses.get(file.path) ?? 'modified',
+    generated: generated.has(file.path),
   }))
 
   // Uncommitted work belongs to the checkout, not to some other ref.

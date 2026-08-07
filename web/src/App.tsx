@@ -29,6 +29,7 @@ export default function App() {
   /** path -> hash of the diff section that was marked as read. */
   const [viewed, setViewedState] = useState<ViewedMap>({})
   const [showViewed, setShowViewed] = useState(false)
+  const [showGenerated, setShowGenerated] = useState(false)
   const [picking, setPicking] = useState<'base' | 'target' | null>(null)
   /** Revision under review. null means the working tree of this checkout. */
   const [target, setTarget] = useState<string | null>(() =>
@@ -95,20 +96,36 @@ export default function App() {
       }))
   }, [data, repoId])
 
+  const untrackedSet = useMemo(() => new Set(data?.untracked ?? []), [data])
+  /** Lockfiles, snapshots, `linguist-generated` — as the server detected them. */
+  const generatedSet = useMemo(
+    () => new Set((data?.files ?? []).filter((f) => f.generated).map((f) => f.path)),
+    [data],
+  )
+
   /**
-   * What CodeView renders. A viewed file is removed, never `collapsed: true`:
-   * collapsing shortens items, so more fit in the virtual window and the library
-   * mounts more — 4-5x the cost beyond ~87 files (decision 7 in PLAN.md).
+   * What CodeView renders. Files that are hidden are removed, never switched to
+   * `collapsed: true`: collapsing shortens items, so more fit in the virtual
+   * window and the library mounts more — 4-5x the cost beyond ~87 files
+   * (decision 7 in PLAN.md). Hiding a generated file is the same move, applied
+   * to the ones that make the largest diffs large in the first place.
    */
   const items = useMemo(
-    () => (showViewed ? allItems : allItems.filter((item) => !(item.path in viewed))),
-    [allItems, viewed, showViewed],
+    () =>
+      allItems.filter((item) => {
+        if (!showViewed && item.path in viewed) return false
+        if (!showGenerated && generatedSet.has(item.path)) return false
+        return true
+      }),
+    [allItems, viewed, showViewed, generatedSet, showGenerated],
   )
 
   const stats = data?.totals ?? { files: 0, additions: 0, deletions: 0 }
   const viewedCount = Object.keys(viewed).length
-
-  const untrackedSet = useMemo(() => new Set(data?.untracked ?? []), [data])
+  const generatedCount = useMemo(
+    () => allItems.filter((item) => generatedSet.has(item.path)).length,
+    [allItems, generatedSet],
+  )
 
   /** Tree entries: every file, viewed or not, enriched with git's per-file counts. */
   const entries = useMemo((): TreeEntry[] => {
@@ -127,9 +144,10 @@ export default function App() {
         // Membership, not truthiness: the stored hash is null for files git
         // reports without one, and that must still count as viewed.
         viewed: item.path in viewed,
+        generated: generatedSet.has(item.path),
       }
     })
-  }, [allItems, data, viewed, untrackedSet])
+  }, [allItems, data, viewed, untrackedSet, generatedSet])
 
   const toggleViewed = useCallback(
     async (path: string, next: boolean) => {
@@ -198,14 +216,15 @@ export default function App() {
     [items],
   )
 
-  /** Clicking a viewed file brings it back rather than jumping to nothing. */
+  /** Clicking a hidden file brings it back rather than jumping to nothing. */
   const selectByPath = useCallback(
     (path: string) => {
       const entry = entries.find((e) => e.path === path)
       if (entry?.viewed && !showViewed) return toggleViewed(path, false)
+      if (entry?.generated && !showGenerated) return setShowGenerated(true)
       goTo(items.findIndex((item) => item.path === path))
     },
-    [entries, items, goTo, toggleViewed, showViewed],
+    [entries, items, goTo, toggleViewed, showViewed, showGenerated],
   )
 
   useEffect(() => {
@@ -276,7 +295,9 @@ export default function App() {
   const baseSource = data ? baseSources[data.base.source] : null
 
   const activePath = items[activeIndex]?.path
-  const allRead = data && allItems.length > 0 && items.length === 0
+  // Nothing left to render, and it is the ticks that emptied the list — a diff
+  // made only of generated files is hidden too, but it has not been read.
+  const allRead = data && allItems.length > 0 && items.length === 0 && viewedCount > 0
 
   return (
     <div className="app">
@@ -436,27 +457,44 @@ export default function App() {
 
           <Resizer containerRef={bodyRef} onCommit={resizeSidebar} />
 
-          {allRead ? (
-            <p className="message">
-              All {entries.length} files reviewed.{' '}
-              <button type="button" className="link" onClick={() => setShowViewed(true)}>
-                Show them again
-              </button>
-            </p>
-          ) : (
-            /* CodeView owns its scrolling. The style lands on its own scroller, so it
-               needs both a real height (or it measures 0 and mounts nothing) and
-               `overflowY: auto` — it only recomputes the virtual window from the
-               element it scrolls itself, never from an ancestor. */
-            <div className="diff">
-              {viewedCount > 0 && (
-                <div className="viewed-bar">
-                  {viewedCount} viewed file(s) hidden
-                  <button type="button" className="link" onClick={() => setShowViewed((v) => !v)}>
-                    {showViewed ? 'Hide them' : 'Show them'}
-                  </button>
-                </div>
-              )}
+          {/* CodeView owns its scrolling. The style lands on its own scroller, so it
+              needs both a real height (or it measures 0 and mounts nothing) and
+              `overflowY: auto` — it only recomputes the virtual window from the
+              element it scrolls itself, never from an ancestor. */}
+          <div className="diff">
+            {(viewedCount > 0 || generatedCount > 0) && (
+              <div className="viewed-bar">
+                {viewedCount > 0 && (
+                  <span className="notice">
+                    {viewedCount} viewed file(s) hidden
+                    <button type="button" className="link" onClick={() => setShowViewed((v) => !v)}>
+                      {showViewed ? 'Hide them' : 'Show them'}
+                    </button>
+                  </span>
+                )}
+                {generatedCount > 0 && (
+                  <span className="notice">
+                    {generatedCount} generated file(s) hidden
+                    <button
+                      type="button"
+                      className="link"
+                      onClick={() => setShowGenerated((g) => !g)}
+                    >
+                      {showGenerated ? 'Hide them' : 'Show them'}
+                    </button>
+                  </span>
+                )}
+              </div>
+            )}
+
+            {allRead ? (
+              <p className="message">
+                All {viewedCount} files reviewed.{' '}
+                <button type="button" className="link" onClick={() => setShowViewed(true)}>
+                  Show them again
+                </button>
+              </p>
+            ) : (
               <CodeView
                 ref={viewRef}
                 items={items}
@@ -464,8 +502,8 @@ export default function App() {
                 renderHeaderMetadata={renderHeaderMetadata}
                 style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}
               />
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>

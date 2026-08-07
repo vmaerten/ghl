@@ -1,18 +1,4 @@
-import { sleep, type Suite } from '../harness.ts'
-
-/**
- * Scoped to the diff pane on purpose: the sidebar scrolls too, and searching
- * the whole document silently tested the file tree instead.
- */
-const SCROLLER = `(() => {
-  const pane = document.querySelector('.diff')
-  if (!pane) return null
-  return [pane, ...pane.querySelectorAll('*')].find((el) => {
-    const cs = getComputedStyle(el)
-    return (cs.overflowY === 'auto' || cs.overflowY === 'scroll') &&
-           el.scrollHeight > el.clientHeight + 20
-  }) ?? null
-})()`
+import { DIFF_SCROLLER as SCROLLER, sleep, type Suite } from '../harness.ts'
 
 /**
  * Which files are painted right now.

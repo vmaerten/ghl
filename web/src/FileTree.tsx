@@ -34,6 +34,7 @@ export interface TreeEntry {
   binary: boolean
   status: GitStatus
   viewed: boolean
+  generated: boolean
 }
 
 /** What App drives the tree with, since folding and revealing live in here. */
@@ -153,6 +154,9 @@ function FileTree(
 
       const parts = []
       if (entry.viewed) parts.push({ text: '✓ ', color: ADDED })
+      // The tree lists them even though the diff pane does not render them, so
+      // the row has to say why it leads nowhere.
+      if (entry.generated) parts.push({ text: 'gen ', color: MUTED })
       if (entry.binary) parts.push({ text: 'bin', color: MUTED })
       else {
         if (entry.additions > 0) parts.push({ text: `+${entry.additions}`, color: ADDED })

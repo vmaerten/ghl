@@ -24,6 +24,19 @@ state lives in `.git/ghl/state.json` and is keyed by revision range, so a file m
 against one base is not marked against another. Each tick stores the hash of that file's
 diff section: if the file changes, its tick clears on its own.
 
+Generated files are hidden the same way. Measured across 323 real branches, the largest
+diffs are not large in code but in generated files — on one of them a `package-lock.json`
+is 99.9% of the whole thing. Lockfiles, `__snapshots__/`, `dist/`, `vendor/`, minified
+bundles and protobuf output are kept out of the diff pane by default, still listed in the
+tree, marked `gen`, and one click away. The built-in list is deliberately narrow, because a
+file wrongly hidden is a file you never learn to look for; `.gitattributes` has the last
+word in both directions:
+
+```gitattributes
+src/api-types.ts     linguist-generated
+dist/hand-written.ts -linguist-generated
+```
+
 ## Usage
 
 ```bash
@@ -68,7 +81,7 @@ says so.
 
 ```bash
 pnpm test          # all of them
-pnpm test tree     # one suite: tree, resize, viewed, pickers, scroll
+pnpm test tree     # one suite: tree, resize, viewed, pickers, scroll, generated
 ```
 
 They drive a headless Chrome over the real UI — `CHROME_PATH` overrides where it
@@ -87,6 +100,7 @@ serves, so testing without rebuilding silently tests the previous version.
 bin/ghl.ts       CLI — the only place that reads the current directory
 src/git.ts       git layer, every call through `git -C <repoPath>`
 src/revision.ts  base resolution and patch construction
+src/generated.ts which files a tool wrote, rules then `.gitattributes`
 src/server.ts    HTTP server, routes namespaced by repo
 src/types.ts     the shapes that cross the HTTP boundary
 web/src/*.tsx    the UI, importing those same shapes

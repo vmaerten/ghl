@@ -50,6 +50,19 @@ function baseTree(root: string) {
   write(root, 'web/styles.css', '.a {\n  color: red;\n}\n')
   write(root, 'doomed.ts', lines(15, 'doomed'))
   write(root, 'to-be-renamed.ts', lines(40, 'renamed'))
+  // Generated files, and the two `.gitattributes` overrides that have to beat
+  // the built-in rules in both directions: one file the rules know nothing
+  // about, one they would wrongly claim.
+  write(
+    root,
+    '.gitattributes',
+    'src/api-types.ts linguist-generated\ndist/hand-written.ts -linguist-generated\n',
+  )
+  write(root, 'pnpm-lock.yaml', lines(200, 'lock'))
+  write(root, 'dist/bundle.js', lines(80, 'bundle'))
+  write(root, 'dist/hand-written.ts', lines(20, 'kept'))
+  write(root, 'src/api-types.ts', lines(30, 'api'))
+  write(root, 'web/components/__snapshots__/Widget0.test.tsx.snap', lines(40, 'snap'))
   // Enough of them that the tree has to virtualise at a 1000px viewport.
   for (let i = 0; i < 60; i++) {
     write(root, `web/components/Widget${i}.tsx`, lines(20, `widget${i}`))
@@ -65,6 +78,13 @@ function featureChanges(root: string) {
   for (let i = 0; i < 45; i++) {
     write(root, `web/components/Widget${i}.tsx`, lines(28, `widget${i}`))
   }
+  // generated, hidden from the diff pane by default
+  write(root, 'pnpm-lock.yaml', lines(260, 'lock'))
+  write(root, 'dist/bundle.js', lines(95, 'bundle'))
+  write(root, 'src/api-types.ts', lines(38, 'api'))
+  write(root, 'web/components/__snapshots__/Widget0.test.tsx.snap', lines(52, 'snap'))
+  // Matches the `dist/` rule, but `.gitattributes` unsets it: stays visible.
+  write(root, 'dist/hand-written.ts', lines(26, 'kept'))
   // added
   write(root, 'src/core/cache.ts', lines(35, 'cache'))
   write(root, 'web/components/NewPanel.tsx', lines(50, 'panel'))

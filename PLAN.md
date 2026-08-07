@@ -74,6 +74,7 @@ headless does no real compositing. Redo with CDP tracing if the need arises.
 | 5 | **Manual** refresh (button + `R`) | `.git` watcher deferred; `.git` changes constantly, debouncing is a topic of its own |
 | 6 | V1 = file tree + keyboard + persistent viewed | Context expansion and comments in V2 |
 | 7 | A viewed file is **removed from the items**, never `collapsed: true` | Collapsing multiplies cost by 4–5 beyond 87 files (measured) |
+| 9 | Generated files **hidden by default**, `.gitattributes` overriding | They are what makes the largest diffs large (99.9% of one of them). Same removal as 7, on the files that cost the most |
 
 ### Three disciplines to hold from the first line
 
@@ -195,6 +196,12 @@ null, and `Boolean(null)` would silently drop the tick.
    State lives in `.git/ghl/state.json`, keyed by revision range, and each entry stores the
    hash of that file's diff section: change the file and its tick clears, while other files
    keep theirs.
+8. **Generated files hidden.** ✅ Lockfiles, `__snapshots__/`, `dist/`, `vendor/`, minified
+   bundles and protobuf output leave the items array exactly as viewed files do, and
+   `.gitattributes` overrides the rules in both directions (`linguist-generated` to add,
+   `-linguist-generated` to rescue). Still listed in the tree, marked `gen`, one click from
+   coming back. The rule list is kept narrow on purpose: a file wrongly hidden is a file
+   the reader never learns to look for.
 
 ## 5. Known traps
 
@@ -248,6 +255,13 @@ null, and `Boolean(null)` would silently drop the tick.
   on this project, see issue #1.
 - **Measuring at first frame gives wrong numbers.** Content arrives asynchronously. Any
   perf measurement must wait for DOM stabilisation or it reports times 10× too good.
+- **Absence from a virtualised pane proves nothing.** "This file is not rendered" has to be
+  established across the whole scroll, one step under a viewport, or it only says the file
+  sits below the fold. `allDiffFiles()` does that; the count it returns matches the file
+  count exactly, which is how we know the walk misses nothing.
+- **The suites share one fixture within a run.** `pickers` writes `branch.feature.ghlBase`
+  into it, so every suite after it sees a wider diff — 60 files instead of 58. Harmless
+  while assertions stay relative, and a trap the day one of them hardcodes a number.
 
 ## 6. V2
 

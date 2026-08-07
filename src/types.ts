@@ -18,6 +18,8 @@ export interface FileCounts {
 
 export interface FileStat extends FileCounts {
   status: GitStatus
+  /** Written by a tool, not by hand — hidden from the diff pane by default. */
+  generated: boolean
 }
 
 /** As served: the hash identifies the diff section a viewed tick was set on. */

@@ -284,6 +284,17 @@ body.resizing * {
   font-size: 11px;
 }
 
+.viewed-bar .notice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.viewed-bar .notice + .notice::before {
+  content: '·';
+  color: var(--border);
+}
+
 .link {
   padding: 0;
   border: 0;
