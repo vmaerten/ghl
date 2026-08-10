@@ -10,6 +10,7 @@ but pushing it just to look at it is not worth the trip.
 | key | action |
 |-----|--------|
 | `j` / `k` | next / previous file |
+| `/` | filter the tree by path (Enter keeps it, Escape drops it) |
 | `v` | mark the current file as viewed |
 | `c` | comment the selected lines |
 | `b` | change the base |
@@ -22,6 +23,10 @@ one row. Both panes are virtualised, so a 107-file diff keeps ~48 rows in the DO
 lists files in the tree's order, not the patch's — git sorts whole paths bytewise, so a file
 at the root would otherwise come first on one side and last on the other, and `j`/`k` would
 walk an order the eye is not following.
+
+`/` filters that tree on the path — a plain case-insensitive substring, so a directory name
+brings everything under it. While a filter is in force `j`/`k` walk what it kept, and the
+diff pane keeps every file: the filter says where to look, it does not narrow the review.
 
 Lines can be commented, from the `+` in the gutter or with `c` on a selection. A comment is a
 remark meant to be handed to an agent, so it is filed against the code rather than against the

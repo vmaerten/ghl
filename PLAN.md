@@ -75,6 +75,8 @@ headless does no real compositing. Redo with CDP tracing if the need arises.
 | 6 | V1 = file tree + keyboard + persistent viewed | Context expansion and comments in V2 |
 | 6b | Comments are filed **per repository**, keyed by path and by the text of their lines — not by revision range like `viewed` | A tick lost when the base changes is correct; a written remark lost is not, and `resolveBase` changes its mind on its own (a guessed base, a `gh stack` chain that moves). What keeps a comment off unrelated lines is its anchor, not a range key. See issue #5 |
 | 6c | The anchor is the **text of the commented lines**, not the file's diff-section hash | Reusing `sectionHashes` would stale every comment in a file the moment any hunk in it moves — which is the nominal case, since an agent fixing one remark leaves the others. A signal that always fires says nothing |
+| 6d | The tree filter drives `@pierre/trees`' own search model, through **our input in the light DOM** — never `search: true` | The library's input is permanent (its CSS has no closed state) and it claims the keyboard: with it, any letter typed while a row has focus becomes a query, and clicking a file focuses a row — so `j`, `v`, `c` would stop working right after the most common gesture in the tool. `setSearch` lives on the controller and needs none of it. See issue #7 |
+| 6e | The filter narrows the **tree and `j`/`k`**, never the items handed to the pane | Filtering the items would change the array on every keystroke, which is decision 7's failure exactly. Keeping the cursor inside the kept set is what stops it landing on a file the sidebar is hiding |
 | 7 | ~~A viewed file is **removed from the items**~~ → **`collapsed: true`**, as GitHub does it | Removing it changed the item array on every tick, and the pane rebuilds its virtual window when that happens: the reader was thrown back to the top of the diff, and a file clicked in the tree came back somewhere they never saw (issue #36). The measured cost of collapsing is real but narrower than it looked — see §7 |
 
 ### Three disciplines to hold from the first line
@@ -292,6 +294,16 @@ threshold mean "no tab" rather than "no click".
   `collapsed: true` multiplies cost by 4–5. Hence decision 7. General corollary: **the
   dominant cost is the number of items mounted at once**, not diff size. Any feature that
   shortens items increases how many are on screen.
+- **A tree search that matches nothing filters nothing.** `hide-non-matches` only hides rows
+  when at least one path matched (`matchingPaths.length > 0` gates it), so a query no file
+  answers puts the whole tree back — under the words "no file matches". The rows are hidden
+  from `styles.css` instead, with `!important`, since the library writes `display: flex`
+  inline on its host.
+- **A tree search rewrites the folds while it is open**, and reopens the ancestors of the
+  selected file when it closes. Recording that as the reader's own folding loses every fold
+  nested inside another one: the library restores its snapshot, but a fold inside a fold
+  never returns to the visible rows, so nothing records it again and the next `resetPaths`
+  opens it. `FileTree.tsx` stops its bookkeeping while a filter is in force.
 - **Patches are `isPartial`.** Context expansion needs an endpoint serving both full file
   versions, wired to `loadDiffFiles`. That is what puts it in V2.
 - **Untracked files are noise.** 446 of them on prebid-server-proxy against 2 real changes.

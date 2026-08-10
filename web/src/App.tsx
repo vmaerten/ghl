@@ -109,6 +109,15 @@ export default function App() {
   const treeRef = useRef<FileTreeHandle>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
   const [sidebarWidth, setSidebarWidth] = useState(storedWidth)
+  /**
+   * What the sidebar is filtered on. Not persisted, unlike the width beside it:
+   * a filter restored on load is a diff that looks half empty for no visible
+   * reason.
+   */
+  const [filter, setFilter] = useState('')
+  /** The files it kept, or null when there is none. Comes from the tree. */
+  const [matches, setMatches] = useState<string[] | null>(null)
+  const filterInputRef = useRef<HTMLInputElement>(null)
 
   /**
    * The single refresh path.
@@ -517,6 +526,31 @@ export default function App() {
     [data, repoId, refresh, target],
   )
 
+  /** Where the cursor may land: every item, or the ones the filter kept. */
+  const navigable = useMemo(() => {
+    if (!matches) return null
+    const kept = new Set(matches)
+    return items.flatMap((item, index) => (kept.has(item.path) ? [index] : []))
+  }, [items, matches])
+
+  /**
+   * The next file in that direction — not `activeIndex ± 1`, so the cursor stays
+   * on a row the sidebar is showing. Setting a filter does not move it (that
+   * would scroll the pane on every keystroke), so the first step is what enters
+   * the subset.
+   */
+  const step = useCallback(
+    (direction: 1 | -1) => {
+      if (!navigable) return activeIndex + direction
+      const next =
+        direction === 1
+          ? navigable.find((index) => index > activeIndex)
+          : navigable.findLast((index) => index < activeIndex)
+      return next ?? activeIndex
+    },
+    [navigable, activeIndex],
+  )
+
   /** Navigation walks the rendered items — what is left to read. */
   const goTo = useCallback(
     (index: number) => {
@@ -558,10 +592,15 @@ export default function App() {
 
       if (event.key === 'b') setPicking('base')
       else if (event.key === 't') setPicking('target')
-      else if (event.key === 'j') goTo(activeIndex + 1)
-      else if (event.key === 'k') goTo(activeIndex - 1)
+      else if (event.key === 'j') goTo(step(1))
+      else if (event.key === 'k') goTo(step(-1))
       else if (event.key === 'r' || event.key === 'R') refresh()
-      else if (event.key === 'c') {
+      else if (event.key === '/') {
+        // Selected, not merely focused: `/` over a filter already in force is a
+        // second thought, and typing straight over it is the shortest way to say so.
+        filterInputRef.current?.focus()
+        filterInputRef.current?.select()
+      } else if (event.key === 'c') {
         // The selection, not the file under `j`/`k`: a comment is about the lines
         // that were picked, which may be in a file the cursor is not on.
         const selection = viewRef.current?.getSelectedLines()
@@ -579,7 +618,18 @@ export default function App() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [activeIndex, goTo, refresh, items, viewed, toggleViewed, picking, composer, openComposer])
+  }, [
+    activeIndex,
+    goTo,
+    step,
+    refresh,
+    items,
+    viewed,
+    toggleViewed,
+    picking,
+    composer,
+    openComposer,
+  ])
 
   const resizeSidebar = useCallback((width: number) => {
     setSidebarWidth(width)
@@ -880,7 +930,11 @@ export default function App() {
           ref={bodyRef}
           style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}
         >
-          <aside className="sidebar">
+          {/* A query nothing answers filters nothing, and the whole tree comes
+              back under the words "no file matches" (§5 of PLAN.md). Hence the
+              class — hiding the rows, never unmounting the tree, which holds the
+              model and every fold. */}
+          <aside className={matches?.length === 0 ? 'sidebar filtered-empty' : 'sidebar'}>
             <div className="sidebar-head">
               <span>
                 {viewedCount > 0
@@ -911,11 +965,46 @@ export default function App() {
                 Expand all
               </button>
             </div>
+
+            {/* Ours, in the light DOM, rather than the tree's own — decision 6d.
+                The INPUT guard on the keyboard handler covers this one for free. */}
+            <div className="tree-filter">
+              <input
+                ref={filterInputRef}
+                type="text"
+                value={filter}
+                placeholder="Filter files (/)"
+                aria-label="Filter files"
+                onChange={(event) => setFilter(event.target.value)}
+                onKeyDown={(event) => {
+                  // Both hand the keyboard back, or the next `j` is typed in here.
+                  // Enter keeps the query — the only way to walk what it just kept.
+                  if (event.key === 'Escape') setFilter('')
+                  else if (event.key !== 'Enter') return
+                  event.currentTarget.blur()
+                }}
+              />
+              {matches && (
+                <span className="count">
+                  {matches.length}/{entries.length}
+                </span>
+              )}
+              {filter.length > 0 && (
+                <button type="button" onClick={() => setFilter('')} title="Clear the filter">
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {matches?.length === 0 && <p className="tree-empty">No file matches.</p>}
+
             <FileTree
               ref={treeRef}
               entries={entries}
               activePath={activePath}
               onSelect={selectByPath}
+              filter={filter}
+              onMatches={setMatches}
             />
           </aside>
 

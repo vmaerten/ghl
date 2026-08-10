@@ -13,8 +13,20 @@ import scroll from './suites/scroll.ts'
 import rename from './suites/rename.ts'
 import order from './suites/order.ts'
 import stack from './suites/stack.ts'
+import filter from './suites/filter.ts'
 
-const SUITES: Suite[] = [tree, resize, viewed, comments, pickers, scroll, rename, order, stack]
+const SUITES: Suite[] = [
+  tree,
+  resize,
+  viewed,
+  comments,
+  pickers,
+  scroll,
+  rename,
+  order,
+  stack,
+  filter,
+]
 
 /**
  * Suites that need no browser: one drives real CLI processes, the other calls

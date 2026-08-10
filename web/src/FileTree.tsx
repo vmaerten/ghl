@@ -49,6 +49,10 @@ interface FileTreeProps {
   entries: TreeEntry[]
   activePath: string | undefined
   onSelect: (path: string) => void
+  /** What to keep. Empty shows everything. */
+  filter: string
+  /** The files the filter kept, in tree order, or null when there is no filter. */
+  onMatches: (paths: string[] | null) => void
 }
 
 /**
@@ -113,7 +117,7 @@ const asText = (parts: DecorationPart[]): FileTreeRowDecoration => ({
  *    the +/- counts share a single string.
  */
 function FileTree(
-  { entries, activePath, onSelect }: FileTreeProps,
+  { entries, activePath, onSelect, filter, onMatches }: FileTreeProps,
   ref: React.ForwardedRef<FileTreeHandle>,
 ) {
   const [themeStyles, setThemeStyles] = useState<TreeThemeStyles | null>(null)
@@ -121,15 +125,19 @@ function FileTree(
   // Read by callbacks the model captured at construction.
   const entriesRef = useRef(new Map<string, TreeEntry>())
   const onSelectRef = useRef(onSelect)
+  const onMatchesRef = useRef(onMatches)
   const totalsRef = useRef(new Map<string, DirectoryTotals>())
   /** Directories the reader folded, so a refresh does not unfold them all. */
   const collapsedRef = useRef(new Set<string>())
+  /** The query in force, read by handlers that must behave differently under one. */
+  const filterRef = useRef('')
   /** Set while we drive the selection ourselves, to not echo it back to App. */
   const syncingRef = useRef(false)
 
   const byPath = useMemo(() => new Map(entries.map((e) => [e.path, e] as const)), [entries])
   entriesRef.current = byPath
   onSelectRef.current = onSelect
+  onMatchesRef.current = onMatches
   totalsRef.current = useMemo(() => directoryTotals(entries), [entries])
 
   const { model } = useFileTree({
@@ -138,6 +146,10 @@ function FileTree(
     density: 'compact',
     flattenEmptyDirectories: true,
     initialExpansion: 'open',
+    // Spelled out although it is the default: the other two modes leave the
+    // non-matching files on screen, which makes the filter a highlight. No
+    // `search: true` either — decision 6d.
+    fileTreeSearchMode: 'hide-non-matches',
     onSelectionChange: (paths) => {
       if (syncingRef.current) return
       const path = paths.at(-1)
@@ -239,11 +251,30 @@ function FileTree(
     [reveal, setAllExpanded],
   )
 
+  /**
+   * The files the filter kept, read back from the model rather than recomputed.
+   *
+   * `j`/`k` walk this set, so it has to be the very set the rows come from, and
+   * the matching rule is the library's. Directory rows and folded chains arrive
+   * in the same list and are dropped by the one test that tells them apart.
+   */
+  const reportMatches = useCallback(() => {
+    onMatchesRef.current(
+      filterRef.current.length === 0
+        ? null
+        : model.getSearchMatchingPaths().filter((path) => entriesRef.current.has(path)),
+    )
+  }, [model])
+
   // Tracked live: a directory inside a folded one is no longer visible, so the
   // set cannot be read back after the fact.
   useEffect(
     () =>
       model.subscribe(() => {
+        // Under a filter the folding is the library's, not the reader's, and
+        // recording it loses every fold nested inside another one — §5 of
+        // PLAN.md, and the regression the `filter` suite ends on.
+        if (filterRef.current.length > 0) return
         for (const row of model.getVisibleRows(0, model.getVisibleCount())) {
           if (row.kind !== 'directory') continue
           if (row.isExpanded) collapsedRef.current.delete(row.path)
@@ -264,10 +295,25 @@ function FileTree(
   useEffect(() => {
     const folded = [...collapsedRef.current]
     model.resetPaths(paths)
-    for (const path of folded) {
-      asDirectory(model.getItem(path))?.collapse()
+    // Not under a filter: folding an ancestor of a match hides the match itself.
+    // The library re-runs the query over the new paths, and puts these folds
+    // back when the filter clears.
+    if (filterRef.current.length === 0) {
+      for (const path of folded) {
+        asDirectory(model.getItem(path))?.collapse()
+      }
     }
-  }, [model, paths])
+    reportMatches()
+  }, [model, paths, reportMatches])
+
+  // Set before the model is told, so the subscriber above already knows a filter
+  // is in force by the time `setSearch` notifies it.
+  useEffect(() => {
+    const query = filter.trim()
+    filterRef.current = query
+    model.setSearch(query.length > 0 ? query : null)
+    reportMatches()
+  }, [model, filter, reportMatches])
 
   useEffect(() => {
     model.setGitStatus(entries.map((e) => ({ path: e.path, status: e.status ?? 'modified' })))

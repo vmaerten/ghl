@@ -298,6 +298,66 @@ body.resizing * {
   color: var(--text);
 }
 
+.tree-filter {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 8px;
+}
+
+.tree-filter input {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 11px;
+}
+
+.tree-filter input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.tree-filter .count {
+  color: var(--text-dim);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tree-filter button {
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.tree-filter button:hover {
+  color: var(--text);
+}
+
+/* See App.tsx: with no match the tree shows everything again, and only this
+   hides it. Hidden, not unmounted — the model and the folds live in there.
+   `!important` because the library writes `display: flex` inline on the host
+   element (render/FileTree.js), which no rule from out here can outrank. */
+.sidebar.filtered-empty .tree {
+  display: none !important;
+}
+
+.tree-empty {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0 8px 8px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
 /* The tree itself lives in a shadow DOM: nothing here reaches its rows, which
    are styled through the --trees-* custom properties set in FileTree.jsx. */
 .tree {
