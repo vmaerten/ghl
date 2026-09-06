@@ -16,6 +16,7 @@ but pushing it just to look at it is not worth the trip.
 | `t` | change the revision under review |
 | `l` | show one commit, or all of them |
 | `r` | refresh the diff |
+| `⌘`/`Ctrl` + click | go to the definition of the identifier under the pointer |
 
 The file tree shows an icon per file type, colours each row by its git status (added,
 modified, deleted, renamed, untracked) and folds chains of single-child directories into
@@ -61,6 +62,22 @@ list, so marking one never moves you, and clicking any row takes you to that fil
 is folded or not. The state lives in `.git/ghl/state.json` and is keyed by revision range, so
 a file marked against one base is not marked against another. Each tick stores the hash of
 that file's diff section: if the file changes, its tick clears on its own.
+
+Hovering an identifier shows its type and its documentation, and `⌘`/`Ctrl` + clicking one
+goes to its definition — the question you actually ask while reading a diff, answered without
+leaving it. It is a real language server doing the answering, started on the repository under
+review and found on your `PATH`: `typescript-language-server`, `gopls`, `rust-analyzer`. If
+none of them is installed for the languages in the diff, nothing appears and nothing is asked.
+
+It answers **only on the additions side of the working tree**, and is invisible everywhere
+else. A language server reads the files on disk, and the working tree is the one view whose
+line numbers are those files' own; on a commit, a ref, or the deletions side, the diff
+describes a tree the checkout does not hold, and the answer would be exactly right about the
+wrong lines. A silent hover is better than a confident one that is off by six.
+
+Definitions land in the diff when the diff holds them. When it does not — the symbol is
+defined in a file this change never touched — the card says so and shows the lines it points
+at, because ghl shows a diff and is not about to grow a file browser.
 
 ## Usage
 

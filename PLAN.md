@@ -75,6 +75,8 @@ headless does no real compositing. Redo with CDP tracing if the need arises.
 | 6 | V1 = file tree + keyboard + persistent viewed | Context expansion and comments in V2 |
 | 6b | Comments are filed **per repository**, keyed by path and by the text of their lines — not by revision range like `viewed` | A tick lost when the base changes is correct; a written remark lost is not, and `resolveBase` changes its mind on its own (a guessed base, a `gh stack` chain that moves). What keeps a comment off unrelated lines is its anchor, not a range key. See issue #5 |
 | 6c | The anchor is the **text of the commented lines**, not the file's diff-section hash | Reusing `sectionHashes` would stale every comment in a file the moment any hunk in it moves — which is the nominal case, since an agent fixing one remark leaves the others. A signal that always fires says nothing |
+| 9 | Code navigation answers **only on the additions side of the working tree** | A language server reads the disk, and that is the one view whose line numbers are a file's own (`buildPatch` with no tip). On a commit, a ref or `--committed`, the additions side describes a tree git holds and the checkout does not — the hover would be right about the wrong lines, with no way for the reader to tell. The gate is `target.workingTree`, computed once in `resolveRequest` and read by both the payload and the guard, so what is on screen and what is answerable cannot drift apart |
+| 9b | The registry is **three entries, hard-coded**, detected on the `PATH` | A short table that was run against a real server beats a long one copied from documentation; each language is one line. A `git config ghl.lsp.<ext>` escape hatch is a known, deliberate non-feature until someone asks for it. Being on the `PATH` is not being able to run: `typescript-language-server` refuses to start without a resolvable `typescript` (this repo is on TS 7, whose `lib/` no longer ships `tsserver.js`), so a failed handshake is remembered for a minute rather than respawned per pointer pause |
 | 7 | ~~A viewed file is **removed from the items**~~ → **`collapsed: true`**, as GitHub does it | Removing it changed the item array on every tick, and the pane rebuilds its virtual window when that happens: the reader was thrown back to the top of the diff, and a file clicked in the tree came back somewhere they never saw (issue #36). The measured cost of collapsing is real but narrower than it looked — see §7 |
 
 ### Three disciplines to hold from the first line
@@ -281,6 +283,23 @@ threshold mean "no tab" rather than "no click".
 
 ## 5. Known traps
 
+- **A language server's root and its documents must be spelled the same way.** Announce a
+  root of `/private/var/…` (a realpath) and then open `/var/…` — the two spellings of every
+  checkout under the temp directory on macOS — and gopls places the document outside its own
+  workspace, belonging to no package, and answers *nothing at all* rather than saying why.
+  It looks exactly like a server that is still indexing, and waiting does not fix it. Both
+  sides go through `realpathSync` in `src/lsp.ts`, and so does the comparison that decides
+  whether a definition landed inside the repository — tsserver resolves symlinks on the way
+  back, gopls does not.
+- **`onStop` never lets the server's `close` event fire.** `bin/ghl.ts` runs
+  `server.close(); process.exit(0)`, and `process.exit` is synchronous, so a cleanup hung on
+  `server.on('close')` covers the test harness and nothing else. Child processes need
+  `process.on('exit')` as well — and `processId` in the LSP `initialize`, which is what
+  covers a `SIGKILL` neither of them survives.
+- **A file being in the diff does not put all of its lines in it.**
+  `scrollTo({ type: 'line' })` on a line outside every hunk resolves to nothing, moves
+  nowhere, and writes a `console.warn` the harness does not collect — a jump that looks like
+  it worked and is green. The hunks are checked before scrolling, in `goToDefinition`.
 - **`CodeView` needs an explicit height.** It creates its own scroller; without
   `height: 100%` it measures 0 and mounts no items — silently, with no error.
 - **`CodeView` must scroll itself — `overflowY: auto` goes on the component, not on a

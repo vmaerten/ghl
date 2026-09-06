@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 import { platform } from 'node:process'
+import { fileURLToPath } from 'node:url'
 
 import { launch, type Browser, type Page } from 'puppeteer-core'
 
@@ -64,7 +65,19 @@ export async function withHarness<T>(
   repoPath: string,
   body: (make: (target?: string) => Promise<Harness>, browser: Browser) => Promise<T>,
 ): Promise<T> {
-  const server = createGhlServer({ repos: [{ repoPath }] })
+  // The scripted server from `fake-lsp.ts`, so the navigation suite drives the
+  // real routes and the real pool without depending on which language servers
+  // this machine has, or on how long one of them takes to index.
+  const server = createGhlServer({
+    repos: [{ repoPath }],
+    lspServers: [
+      {
+        command: process.execPath,
+        args: [fileURLToPath(new URL('./fake-lsp.ts', import.meta.url)), 'normal'],
+        languages: { '.tsx': 'typescriptreact' },
+      },
+    ],
+  })
   const port = await listen(server, 0)
   const base = `http://127.0.0.1:${port}/r/${repoIdFor(repoPath)}`
 

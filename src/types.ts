@@ -210,6 +210,16 @@ export interface DiffPayload {
   /** Only those on a file this diff contains; the rest are for another diff. */
   comments: ServedComment[]
   /**
+   * Which files here could be navigated, if any.
+   *
+   * Carried by the diff rather than fetched on its own: it changes exactly when
+   * the diff changes, and a separate endpoint would need a loading state, an
+   * error state and a not-known-yet state to answer one boolean. It says what is
+   * installed, never what is running — starting a language server to fill this
+   * in would make the first page load pay seconds for a hover nobody asked for.
+   */
+  lsp: LspInfo
+  /**
    * Something about the stored state the reader should know, or null.
    *
    * The server runs detached, so its stderr reaches nobody: a state file moved
@@ -229,4 +239,70 @@ export interface RefsPayload {
 /** The body of `GET /r/:repoId/api/commits`. */
 export interface CommitsPayload {
   commits: CommitDetail[]
+}
+
+/**
+ * Why a navigation question went unanswered.
+ *
+ * Named rather than reported as a bare null: every one of these is a state the
+ * reader can legitimately be in for a frame — switching to a commit while a
+ * hover is in flight — so none of them is an error, and a null alone would
+ * leave nothing to look at when hovers go quiet.
+ */
+/** What the pool itself can run into; the two below are the HTTP layer's own guards. */
+export type LspSilence = 'no-server-for-this-file' | 'server-unavailable' | 'timed-out'
+
+export type LspRefusal = LspSilence | 'target-is-not-the-working-tree' | 'not-in-the-diff'
+
+/** A stretch of one file, 1-based on both axes: the diff's coordinates, not LSP's. */
+export interface LspSpan {
+  line: number
+  column: number
+  endLine: number
+  endColumn: number
+}
+
+/** A location as the language server gave it, before the diff is consulted. */
+export interface LspFound extends LspSpan {
+  /** Relative to the repository when `inRepo`, absolute otherwise. */
+  path: string
+  inRepo: boolean
+}
+
+export interface LspLocation extends LspFound {
+  /** Whether the diff carries this file: the reader can be taken there, or only told. */
+  inDiff: boolean
+  /** A few lines around the target, for the one case the diff cannot show. */
+  preview: string[]
+  /** 1-based number of `preview[0]`, without which the excerpt cannot be numbered. */
+  previewStart: number
+}
+
+/**
+ * A hover, already cut in two.
+ *
+ * Split here rather than in the browser because the front end has no markdown
+ * renderer and is not getting one: a TypeScript hover is a fenced block followed
+ * by prose, and two regexes on this side are cheaper than a dependency on that
+ * one.
+ */
+export interface LspHoverPayload {
+  refusal: LspRefusal | null
+  /** The first fenced block, fences removed. */
+  signature: string | null
+  /** That block's info string, kept so it can be coloured later. */
+  language: string | null
+  /** Whatever prose was left. */
+  documentation: string | null
+}
+
+export interface LspDefinitionPayload {
+  refusal: LspRefusal | null
+  targets: LspLocation[]
+}
+
+/** What navigation this diff supports, announced with the diff itself. */
+export interface LspInfo {
+  /** Extensions a server is installed for, ".ts" shaped. Empty means stay quiet. */
+  extensions: string[]
 }

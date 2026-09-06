@@ -16,6 +16,7 @@ import CommitSelector from './CommitSelector.tsx'
 import FileTree, { type FileTreeHandle, type TreeEntry } from './FileTree.tsx'
 import Resizer, { storedWidth } from './Resizer.tsx'
 import CommentThread, { type Composer, type SaveState } from './CommentThread.tsx'
+import CodeNav, { type CodeNavHandle } from './CodeNav.tsx'
 import { asMarkdown } from '../../src/export.ts'
 import { treeOrder } from './fileOrder.ts'
 import type {
@@ -23,6 +24,7 @@ import type {
   Comment,
   DiffPayload,
   DiffSide,
+  LspLocation,
   ServedComment,
   ViewedMap,
 } from '../../src/types.ts'
@@ -38,6 +40,62 @@ type DiffItem = CodeViewDiffItem & { path: string }
  * exported by any entry point, so this names the part we read.
  */
 type SelectionContext = { item: CodeViewItem<undefined> }
+
+/**
+ * What a token callback is handed, beyond the event itself.
+ *
+ * `lineCharStart` is a 0-based offset into the line's own text: the library
+ * strips the `+`/`-` marker before colouring, so it is already the file's
+ * column, and the only conversion left is 0-based to 1-based.
+ */
+type TokenEvent = {
+  lineNumber: number
+  lineCharStart: number
+  tokenText: string
+  tokenElement: HTMLElement
+  /** Absent on a whole-file item, which has no two sides — and nothing to navigate. */
+  side?: string
+}
+
+/**
+ * The pointer, painted inside every shadow root at once.
+ *
+ * A module constant, not a built string: `unsafeCSS` takes part in the shallow
+ * comparison of the options object, so rebuilding it per render would rebuild
+ * the pane per render. It is *not* part of `areDiffRenderOptionsEqual`, so it
+ * costs no recolouring.
+ *
+ * The value is read from a custom property rather than written here, because
+ * custom properties inherit across the shadow boundary — turning the affordance
+ * on is then one write on `<html>`, from outside React.
+ */
+const NAV_CSS = `
+  [data-code]:not([data-deletions]) [data-char] {
+    cursor: var(--ghl-nav-cursor, text);
+  }
+`
+
+/**
+ * Where a token sits, in the file rather than in the diff.
+ *
+ * Only the additions side, and only in a diff item: those are the lines the
+ * working tree actually holds, so they are the only ones whose numbers a
+ * language server reading the disk would agree with.
+ */
+function tokenAt(token: TokenEvent, context: SelectionContext) {
+  if (token.side !== 'additions' || context.item.type !== 'diff') return null
+  return {
+    at: {
+      path: context.item.fileDiff.name,
+      line: token.lineNumber,
+      // The library strips the +/- marker before colouring, so this offset is
+      // already the file's own column; 0-based there, 1-based here.
+      column: token.lineCharStart + 1,
+      text: token.tokenText,
+    },
+    rect: token.tokenElement.getBoundingClientRect(),
+  }
+}
 
 /**
  * One annotation per (file, side, line): several comments on the same line share
@@ -124,6 +182,7 @@ export default function App() {
     new URLSearchParams(location.search).get('base'),
   )
   const viewRef = useRef<CodeViewHandle<undefined>>(null)
+  const navRef = useRef<CodeNavHandle>(null)
   /** Folding and revealing live inside the tree, which owns that state. */
   const treeRef = useRef<FileTreeHandle>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
@@ -616,6 +675,52 @@ export default function App() {
     [items, goTo],
   )
 
+  /**
+   * Take the reader to a definition, or say why not.
+   *
+   * A file being in the diff does not put all of its lines in it. `scrollTo`
+   * with a line outside every hunk resolves to nothing, moves nowhere and warns
+   * to a console the harness does not even collect — a jump that looks like it
+   * worked. It is checked here instead, and the card says so.
+   */
+  const goToDefinition = useCallback(
+    (found: LspLocation): string | null => {
+      const item = items.find((one) => one.path === found.path)
+      if (!item) return 'this file is not in the diff'
+
+      treeRef.current?.reveal(item.path)
+
+      const inHunk = item.fileDiff.hunks.some(
+        (hunk) =>
+          found.line >= hunk.additionStart && found.line < hunk.additionStart + hunk.additionCount,
+      )
+      if (!inHunk) {
+        viewRef.current?.scrollTo({ type: 'item', id: item.id, align: 'start' })
+        return `line ${found.line} is not in the changed part of this file`
+      }
+
+      // A file we are sending someone into is a file they are about to read.
+      if (item.path in viewed) toggleViewed(item.path, false)
+
+      viewRef.current?.scrollTo({
+        type: 'line',
+        id: item.id,
+        lineNumber: found.line,
+        side: 'additions',
+        align: 'center',
+      })
+      // The library's own highlight, not one we draw: it is reapplied from state
+      // on every render, so it survives the recycling of the host it sits in.
+      // The cost is the single selection slot — a jump clears what was selected.
+      viewRef.current?.setSelectedLines({
+        id: item.id,
+        range: { start: found.line, end: found.line, side: 'additions' },
+      })
+      return null
+    },
+    [items, viewed, toggleViewed],
+  )
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       // Never steal keys from an input or from a browser shortcut.
@@ -688,11 +793,53 @@ export default function App() {
     },
   )
 
+  /**
+   * Whether anything here can answer, which is the one gate for the feature.
+   *
+   * A language server reads the disk, so the only view whose line numbers are a
+   * file's own is the working tree. Off, the three callbacks below are
+   * `undefined`, `shouldUseTokenTransformer` goes false, and there is no
+   * `data-char` in the DOM at all — the UI is quiet by construction rather than
+   * by a guard inside a handler.
+   *
+   * The keys stay present either way: `areObjectsEqual` tests `key in`, so a
+   * key that appears and disappears would change the shape of the options and
+   * rebuild the pane.
+   */
+  const navigable = data !== null && data.target.workingTree && data.lsp.extensions.length > 0
+
+  const onTokenEnter = useStableCallback((token: TokenEvent, _e: unknown, c: SelectionContext) => {
+    const found = tokenAt(token, c)
+    if (found) navRef.current?.enter(found.at, found.rect)
+  })
+
+  const onTokenLeave = useStableCallback(() => navRef.current?.leave())
+
+  const onTokenClick = useStableCallback(
+    (token: TokenEvent, event: MouseEvent, c: SelectionContext) => {
+      // The modifier is not there to avoid a conflict — a click on code starts
+      // no line selection — but to keep the affordance honest: the pointer and
+      // the underline only appear while the gesture that would act is held, so
+      // nothing ever looks clickable without being so. It also leaves the plain
+      // click to selecting and copying, which a diff sees far more of.
+      if (!event.metaKey && !event.ctrlKey) return
+      const found = tokenAt(token, c)
+      if (found) navRef.current?.jump(found.at, found.rect)
+    },
+  )
+
+  /** A recycled host reports the rect of whatever line it now holds, so: close. */
+  const onScroll = useStableCallback(() => navRef.current?.hide())
+
   const options = useMemo(
     () => ({
       diffStyle,
       theme: 'github-dark' as const,
       stickyHeaders: true,
+      unsafeCSS: NAV_CSS,
+      onTokenEnter: navigable ? onTokenEnter : undefined,
+      onTokenLeave: navigable ? onTokenLeave : undefined,
+      onTokenClick: navigable ? onTokenClick : undefined,
       // Both gutter APIs are declared mutually exclusive and the library throws
       // on the pair, so this is the native "+" button, not a rendered one.
       // Setting the handler is also what enables dragging on the gutter.
@@ -701,7 +848,15 @@ export default function App() {
       enableLineSelection: true,
       onLineSelectionEnd,
     }),
-    [diffStyle, onGutterUtilityClick, onLineSelectionEnd],
+    [
+      diffStyle,
+      navigable,
+      onTokenEnter,
+      onTokenLeave,
+      onTokenClick,
+      onGutterUtilityClick,
+      onLineSelectionEnd,
+    ],
   )
 
   /**
@@ -1080,11 +1235,22 @@ export default function App() {
               ref={viewRef}
               items={items}
               options={options}
+              onScroll={onScroll}
               renderHeaderMetadata={renderHeaderMetadata}
               renderAnnotation={renderAnnotation}
               style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}
             />
           </div>
+
+          {/* Always mounted, and it paints into a portal on the body, so it adds
+              nothing to this row and shifts nobody's position among its siblings. */}
+          <CodeNav
+            ref={navRef}
+            repoId={repoId}
+            query={query}
+            enabled={navigable}
+            onGoTo={goToDefinition}
+          />
         </div>
       )}
     </div>

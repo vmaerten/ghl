@@ -10,9 +10,18 @@ import {
   headSha,
   listCommits,
   listRefDetails,
+  nameStatus,
   repoState,
   resolveRepoRoot,
+  untrackedPaths,
 } from './git.ts'
+import {
+  createLspPool,
+  extensionsAvailable,
+  previewAround,
+  splitHover,
+  type ServerSpec,
+} from './lsp.ts'
 import {
   buildCommitPatch,
   buildPatch,
@@ -33,7 +42,17 @@ import {
   serveComments,
   setViewed,
 } from './state.ts'
-import type { Comment, CommitsPayload, DiffPayload, PatchResult, RefsPayload } from './types.ts'
+import type {
+  Comment,
+  CommitsPayload,
+  DiffPayload,
+  LspDefinitionPayload,
+  LspHoverPayload,
+  LspLocation,
+  LspRefusal,
+  PatchResult,
+  RefsPayload,
+} from './types.ts'
 import { runtimeRevision } from './version.ts'
 
 /**
@@ -69,6 +88,15 @@ export interface GhlServerOptions {
    * server inside the process doing the testing.
    */
   onStop?: (reason: StopReason) => void
+  /**
+   * Language servers to use instead of the built-in registry.
+   *
+   * Only the tests pass this, and only to point at a scripted server: driving
+   * the real routes against a real process is the whole point, but a real
+   * language server would make the suite depend on what is installed and how
+   * long it takes to index.
+   */
+  lspServers?: ServerSpec[]
 }
 
 /** How often the idle timer looks at the clock. */
@@ -189,7 +217,43 @@ async function resolveRequest(repoPath: string, entry: RepoEntry, url: URL) {
           includeUntracked: entry.includeUntracked ?? false,
         })
 
-  return { base, target, commitRef, commit, committed, build }
+  // Computed once and read by both the payload and the navigation guard, so the
+  // question "is what is on screen the working tree" cannot be answered one way
+  // for the reader and another way for the language server.
+  const workingTree = !target && !commit && !committed
+
+  return { base, target, commitRef, commit, committed, workingTree, build }
+}
+
+/**
+ * What a navigation question may aim at, and the paths it may name.
+ *
+ * A language server reads the disk. The only view whose line numbers are the
+ * line numbers of a file on disk is the working tree: the moment a `?target`, a
+ * `?commit` or `?committed` is in play, the additions side describes a tree git
+ * holds and the checkout does not, and every answer would be exactly right about
+ * the wrong file.
+ *
+ * The set it returns does double duty — it is the guard against turning this
+ * into a reader of arbitrary files, and it is how a definition learns whether
+ * the reader can be taken to it or only told where it is.
+ */
+async function navigableIn(
+  repoPath: string,
+  entry: RepoEntry,
+  url: URL,
+): Promise<{ refusal: LspRefusal | null; paths: Set<string> }> {
+  const { base, workingTree } = await resolveRequest(repoPath, entry, url)
+  if (!workingTree) return { refusal: 'target-is-not-the-working-tree', paths: new Set() }
+
+  // `--name-status` rather than `build()`: a hover fires on every pointer pause,
+  // and rebuilding the patch is four git processes — more than the question it
+  // is guarding costs.
+  const [statuses, untracked] = await Promise.all([
+    nameStatus(repoPath, { kind: 'merge-base', base: base.ref }),
+    entry.includeUntracked ? untrackedPaths(repoPath) : [],
+  ])
+  return { refusal: null, paths: new Set([...statuses.keys(), ...untracked]) }
 }
 
 /**
@@ -199,8 +263,14 @@ async function resolveRequest(repoPath: string, entry: RepoEntry, url: URL) {
  * repositories after the fact: one process serves every checkout the CLI is
  * pointed at, rather than one process per tab.
  */
-export function createGhlServer({ repos, idleMs = 0, onStop }: GhlServerOptions): Server {
+export function createGhlServer({
+  repos,
+  idleMs = 0,
+  onStop,
+  lspServers,
+}: GhlServerOptions): Server {
   const registry = new Map(repos.map((r) => [repoIdFor(r.repoPath), r] as const))
+  const lsp = createLspPool(lspServers)
   let lastSeen = Date.now()
 
   const server = createServer(async (req, res) => {
@@ -277,7 +347,7 @@ export function createGhlServer({ repos, idleMs = 0, onStop }: GhlServerOptions)
       const { repoPath } = entry
 
       if (route === 'api/diff' && req.method === 'GET') {
-        const { base, target, commitRef, commit, committed, build } = await resolveRequest(
+        const { base, target, commitRef, commit, workingTree, build } = await resolveRequest(
           repoPath,
           entry,
           url,
@@ -315,7 +385,7 @@ export function createGhlServer({ repos, idleMs = 0, onStop }: GhlServerOptions)
           head: { branch, sha },
           // A commit holds no working tree either, and the field means "the
           // uncommitted work is in this diff".
-          target: { ref: reviewing, workingTree: !target && !commit && !committed },
+          target: { ref: reviewing, workingTree },
           commit,
           range,
           state,
@@ -331,6 +401,16 @@ export function createGhlServer({ repos, idleMs = 0, onStop }: GhlServerOptions)
             ),
             patch,
           ),
+          // Off the registry and the PATH, with no process started: the first
+          // page load has no business paying for gopls to index a module.
+          lsp: {
+            extensions: workingTree
+              ? extensionsAvailable(
+                  files.map((f) => f.path),
+                  lspServers,
+                )
+              : [],
+          },
           // A sha that stopped resolving — rebased away, amended — falls back to
           // the whole range, and silently would leave the reader thinking they
           // are still on that commit.
@@ -424,6 +504,64 @@ export function createGhlServer({ repos, idleMs = 0, onStop }: GhlServerOptions)
         return json(res, 200, { comments: await removeComment(repoPath, id) })
       }
 
+      // POST for two reasons: it puts these behind the Origin check above, which
+      // GET does not get, and a minified line's column belongs in a body rather
+      // than in a URL a proxy may cache.
+      if ((route === 'api/lsp/hover' || route === 'api/lsp/definition') && req.method === 'POST') {
+        const body = JSON.parse((await readBody(req)) || '{}')
+        const { path, line, column } = body
+        if (typeof path !== 'string' || path === '') {
+          return json(res, 400, { error: 'missing "path"' })
+        }
+        if (!Number.isInteger(line) || line < 1) {
+          return json(res, 400, { error: '"line" must be a positive integer' })
+        }
+        if (!Number.isInteger(column) || column < 1) {
+          return json(res, 400, { error: '"column" must be a positive integer' })
+        }
+
+        const { refusal, paths } = await navigableIn(repoPath, entry, url)
+        // Not a 4xx: every one of these is a state the reader can be in for a
+        // frame — switching revision while a hover is in flight — and a banner
+        // for a race that resolves itself is worse than the race.
+        const refused: LspRefusal | null = refusal ?? (paths.has(path) ? null : 'not-in-the-diff')
+
+        if (route === 'api/lsp/hover') {
+          if (refused !== null) {
+            const empty: LspHoverPayload = {
+              refusal: refused,
+              signature: null,
+              language: null,
+              documentation: null,
+            }
+            return json(res, 200, empty)
+          }
+          const { contents, reason } = await lsp.hover(repoPath, path, line, column)
+          const hover: LspHoverPayload = { refusal: reason, ...splitHover(contents) }
+          return json(res, 200, hover)
+        }
+
+        if (refused !== null) {
+          return json(res, 200, { refusal: refused, targets: [] } satisfies LspDefinitionPayload)
+        }
+        const { targets, reason } = await lsp.definition(repoPath, path, line, column)
+        const located: LspLocation[] = await Promise.all(
+          targets.map(async (found) => {
+            const inDiff = found.inRepo && paths.has(found.path)
+            // Only read the file we cannot show: the diff already carries the
+            // lines of everything else on this page.
+            const excerpt = inDiff
+              ? { preview: [], previewStart: found.line }
+              : await previewAround(
+                  found.inRepo ? join(repoPath, found.path) : found.path,
+                  found.line,
+                )
+            return { ...found, inDiff, ...excerpt }
+          }),
+        )
+        return json(res, 200, { refusal: reason, targets: located } satisfies LspDefinitionPayload)
+      }
+
       if (route === 'api/base' && req.method === 'POST') {
         const { base, target } = JSON.parse((await readBody(req)) || '{}')
         if (!base) return json(res, 400, { error: 'missing "base"' })
@@ -446,6 +584,12 @@ export function createGhlServer({ repos, idleMs = 0, onStop }: GhlServerOptions)
       return json(res, 500, { error: error instanceof Error ? error.message : String(error) })
     }
   })
+
+  // The harness builds a server with no `onStop` and closes it (test/harness.ts),
+  // so nothing in `bin/` would ever reach these children. The exit hook inside
+  // the pool covers the other direction: `onStop` there calls `process.exit`
+  // right after `server.close()`, and this event never fires.
+  server.on('close', () => lsp.dispose())
 
   if (idleMs > 0 && onStop) {
     // Never coarser than the threshold itself, or a short one would never fire.
