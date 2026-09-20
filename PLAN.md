@@ -69,6 +69,7 @@ headless does no real compositing. Redo with CDP tracing if the need arises.
 | 2 | **Node end to end** | One parsing implementation (server and client), and the `./ssr` export stays reachable |
 | 3 | Default = **virtual PR**: `merge-base(base, HEAD)` → working tree | "The PR I would open if I pushed right now" |
 | 3b | Untracked files **listed but excluded** from the diff | Measured on prebid-server-proxy: 2 modified files against 446 untracked ones. The **Untracked** checkbox opts in — it was `--untracked` until a flag deciding what a diff contains turned out to be #55 again |
+| 3c | Generated files **listed but excluded from the rendered review** | A `package-lock.json` is 99.9% of one measured diff. One sidebar row reveals them; the server still carries the full patch, totals, hashes and comments. They are removed from `CodeView`, not passed as `collapsed`, because short collapsed headers saturate its virtual window. See issue #4 |
 | 4 | Base **guessed, displayed, remembered** | A heuristic stays a heuristic: it must be visible and correctable |
 | 8 | `cmdk` for the base picker, no design system | 79 KB headless, no provider, no theme competing with the one Shiki imposes. Mantine core is 8.6 MB and brings its own theming |
 | 5 | **Manual** refresh (button + `R`) | `.git` watcher deferred; `.git` changes constantly, debouncing is a topic of its own |
@@ -278,6 +279,11 @@ threshold mean "no tab" rather than "no click".
    State lives in `.git/ghl/state.json`, keyed by revision range, and each entry stores the
    hash of that file's diff section: change the file and its tick clears, while other files
    keep theirs.
+8. **Generated files.** ✅ Lockfiles, snapshots, `dist/` and paths carrying the
+   `linguist-generated` attribute stay behind one sidebar row by default. The attribute is
+   read from the working tree, HEAD, target or individual commit to match what is under
+   review; `-linguist-generated` overrides the built-in path rules. Showing them is local
+   presentation state in `?generated=1`, not another patch request.
 
 ## 5. Known traps
 
@@ -295,6 +301,12 @@ threshold mean "no tab" rather than "no click".
   `collapsed: true` multiplies cost by 4–5. Hence decision 7. General corollary: **the
   dominant cost is the number of items mounted at once**, not diff size. Any feature that
   shortens items increases how many are on screen.
+- **Generated-file attributes belong to the reviewed tree.** Plain `git check-attr` reads
+  the checkout, which is wrong while `?target=` shows another branch and subtly wrong when
+  the Working tree checkbox stops the diff at HEAD. The source is therefore the target or
+  commit, HEAD for a committed-only review, and the working tree only when it is actually
+  part of the diff. Classification is metadata: removing generated sections from the patch
+  itself would also remove their hashes and comments and make the topbar totals partial.
 - **Patches are `isPartial`.** Context expansion needs an endpoint serving both full file
   versions, wired to `loadDiffFiles`. That is what puts it in V2.
 - **Untracked files are noise.** 446 of them on prebid-server-proxy against 2 real changes.

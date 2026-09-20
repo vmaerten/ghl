@@ -1,6 +1,7 @@
 import { createFixture } from './fixture.ts'
 import { withHarness, type Check, type Suite } from './harness.ts'
 import { runCommits } from './commits.ts'
+import { runGenerated } from './generated.ts'
 import { runLifecycle } from './lifecycle.ts'
 import { runRefs } from './refs.ts'
 import { runWorktree } from './worktree.ts'
@@ -19,6 +20,7 @@ import commits from './suites/commits.ts'
 import worktree from './suites/worktree.ts'
 import untracked from './suites/untracked.ts'
 import search from './suites/search.ts'
+import generated from './suites/generated.ts'
 
 const SUITES: Suite[] = [
   tree,
@@ -34,6 +36,7 @@ const SUITES: Suite[] = [
   worktree,
   untracked,
   search,
+  generated,
 ]
 
 /**
@@ -45,6 +48,7 @@ const PLAIN: { name: string; run: (check: Check) => Promise<void> }[] = [
   { name: 'state', run: runState },
   { name: 'refs', run: runRefs },
   { name: 'commits', run: runCommits },
+  { name: 'generated', run: runGenerated },
   { name: 'worktree', run: runWorktree },
   { name: 'lifecycle', run: runLifecycle },
 ]

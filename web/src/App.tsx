@@ -124,6 +124,14 @@ export default function App() {
     new URLSearchParams(location.search).has('untracked'),
   )
   /**
+   * Generated files stay in the canonical patch but leave the rendered review
+   * by default. Unlike the five values in `query`, this is presentation state:
+   * changing it must not fetch the same diff again.
+   */
+  const [showGenerated, setShowGenerated] = useState(() =>
+    new URLSearchParams(location.search).has('generated'),
+  )
+  /**
    * A base forced from the command line, until something is picked here.
    *
    * Held rather than ignored: the server has no memory of it, so a parameter we
@@ -303,6 +311,23 @@ export default function App() {
     )
   }, [data, repoId])
 
+  const generatedPaths = useMemo(
+    () => new Set((data?.files ?? []).filter((file) => file.generated).map((file) => file.path)),
+    [data],
+  )
+
+  /**
+   * One list for every part of the review the reader can navigate.
+   *
+   * Generated sections are removed rather than passed as `collapsed`: hundreds
+   * of short collapsed headers saturate CodeView's virtual window and cost more
+   * than rendering the useful files alone. The full patch remains in `data`.
+   */
+  const visibleItems = useMemo(
+    () => (showGenerated ? allItems : allItems.filter((item) => !generatedPaths.has(item.path))),
+    [allItems, generatedPaths, showGenerated],
+  )
+
   /**
    * What CodeView renders: every file, the viewed ones folded shut.
    *
@@ -363,7 +388,7 @@ export default function App() {
   const versions = useRef(new Map<string, { key: string; version: number }>())
   const items = useMemo(
     () =>
-      allItems.map((item) => {
+      visibleItems.map((item) => {
         const collapsed = item.path in viewed
         // The pane re-reads an item only when its `version` moves; anything
         // reaching it *through* the item — `collapsed`, `annotations` — is
@@ -382,11 +407,12 @@ export default function App() {
         versions.current.set(item.path, { key, version })
         return { ...item, collapsed, version, annotations: annotations.byPath.get(item.path) }
       }),
-    [allItems, viewed, annotations],
+    [visibleItems, viewed, annotations],
   )
 
   const stats = data?.totals ?? { files: 0, additions: 0, deletions: 0 }
-  const viewedCount = Object.keys(viewed).length
+  const viewedCount = visibleItems.reduce((count, item) => count + Number(item.path in viewed), 0)
+  const storedViewedCount = Object.keys(viewed).length
 
   const commentCounts = useMemo(() => {
     const counts = new Map<string, number>()
@@ -396,10 +422,22 @@ export default function App() {
     return counts
   }, [comments])
 
-  /** Tree entries: every file, viewed or not, enriched with git's per-file counts. */
+  const generatedCommentCount = useMemo(() => {
+    let count = 0
+    for (const path of generatedPaths) count += commentCounts.get(path) ?? 0
+    return count
+  }, [generatedPaths, commentCounts])
+
+  const generatedViewedCount = useMemo(() => {
+    let count = 0
+    for (const path of generatedPaths) count += Number(path in viewed)
+    return count
+  }, [generatedPaths, viewed])
+
+  /** Tree entries: every visible file, enriched with git's per-file counts. */
   const entries = useMemo((): TreeEntry[] => {
     const byPath = new Map((data?.files ?? []).map((f) => [f.path, f] as const))
-    return allItems.map((item) => {
+    return visibleItems.map((item) => {
       const stat = byPath.get(item.path)
       return {
         id: item.id,
@@ -416,7 +454,7 @@ export default function App() {
         comments: commentCounts.get(item.path) ?? 0,
       }
     })
-  }, [allItems, data, viewed, commentCounts])
+  }, [visibleItems, data, viewed, commentCounts])
 
   const toggleViewed = useCallback(
     async (path: string, next: boolean) => {
@@ -573,6 +611,33 @@ export default function App() {
     setComposer(null)
     viewRef.current?.clearSelectedLines()
   })
+
+  /**
+   * Reveal or remove every generated section without refetching the patch.
+   *
+   * Keep the current path selected when it exists on both sides of the toggle.
+   * If it is itself being hidden, the same bounded position is the least
+   * surprising neighbour. An editor on a hidden file must close too, or the
+   * global keyboard guard would remain active with no composer on screen; its
+   * draft stays in `draftsRef` and comes back when that line is opened again.
+   */
+  const toggleGenerated = useCallback(() => {
+    const next = !showGenerated
+    const currentPath = items[activeIndex]?.path
+    const nextItems = next ? allItems : allItems.filter((item) => !generatedPaths.has(item.path))
+    const samePath = currentPath ? nextItems.findIndex((item) => item.path === currentPath) : -1
+
+    if (!next && composer && generatedPaths.has(composer.path)) closeComposer()
+    setActiveIndex(
+      samePath >= 0 ? samePath : Math.max(0, Math.min(activeIndex, nextItems.length - 1)),
+    )
+    setShowGenerated(next)
+
+    const url = new URL(location.href)
+    if (next) url.searchParams.set('generated', '1')
+    else url.searchParams.delete('generated')
+    history.replaceState(null, '', url)
+  }, [showGenerated, items, activeIndex, allItems, generatedPaths, composer, closeComposer])
 
   /**
    * Put the whole review on the clipboard, as markdown.
@@ -1284,7 +1349,7 @@ export default function App() {
                   {copied ? 'Copied' : `Copy ✎${comments.length}`}
                 </button>
               )}
-              {viewedCount > 0 && (
+              {storedViewedCount > 0 && (
                 <button type="button" onClick={resetViewed} title="Unmark every file">
                   Reset
                 </button>
@@ -1296,6 +1361,34 @@ export default function App() {
                 Expand all
               </button>
             </div>
+            {generatedPaths.size > 0 && (
+              <button
+                type="button"
+                className="generated-files"
+                aria-expanded={showGenerated}
+                onClick={toggleGenerated}
+                title={
+                  showGenerated
+                    ? 'Hide files detected as generated'
+                    : 'Include files detected as generated in this review'
+                }
+              >
+                <span className="generated-caret" aria-hidden="true">
+                  {showGenerated ? '▾' : '▸'}
+                </span>
+                <span>
+                  {generatedPaths.size} generated file{generatedPaths.size > 1 ? 's' : ''}
+                </span>
+                <span className="spacer" />
+                {generatedViewedCount > 0 && (
+                  <span className="generated-viewed">✓{generatedViewedCount}</span>
+                )}
+                {generatedCommentCount > 0 && (
+                  <span className="generated-comments">✎{generatedCommentCount}</span>
+                )}
+                <span className="generated-action">{showGenerated ? 'Hide' : 'Show'}</span>
+              </button>
+            )}
             <FileTree
               ref={treeRef}
               entries={entries}
@@ -1323,6 +1416,17 @@ export default function App() {
               renderAnnotation={renderAnnotation}
               style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}
             />
+            {items.length === 0 && generatedPaths.size > 0 && !showGenerated && (
+              <div className="generated-empty" role="status">
+                <span>
+                  All {generatedPaths.size} changed file{generatedPaths.size > 1 ? 's are' : ' is'}{' '}
+                  generated.
+                </span>
+                <button type="button" onClick={toggleGenerated}>
+                  Show {generatedPaths.size > 1 ? 'files' : 'file'}
+                </button>
+              </div>
+            )}
             <div className="diff-search" role="search" hidden={!searchOpen}>
               <label className="visually-hidden" htmlFor="diff-search-input">
                 Search changed code

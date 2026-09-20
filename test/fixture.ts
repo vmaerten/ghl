@@ -182,6 +182,38 @@ function stackedChain(root: string) {
   )
 }
 
+/**
+ * A mixed diff and an all-generated one for the generated-file review mode.
+ *
+ * Both are branches rather than changes on `feature`: every other browser suite
+ * keeps its established file counts, and reading either while main is checked
+ * out proves attributes come from the target rather than the working tree.
+ */
+function generatedBranches(root: string) {
+  git(root, ['checkout', '-q', 'main'])
+  git(root, ['checkout', '-q', '-b', 'generated'])
+  write(
+    root,
+    '.gitattributes',
+    ['generated/custom.ts linguist-generated', 'dist/kept.js -linguist-generated', ''].join('\n'),
+  )
+  write(root, 'src/review.ts', 'export const review = true\n')
+  write(root, 'package-lock.json', '{\n  "lockfileVersion": 3\n}\n')
+  write(root, 'src/__snapshots__/card.snap', 'exports[`card`] = `<article />`\n')
+  write(root, 'dist/bundle.js', 'var generated=true;\n')
+  write(root, 'generated/custom.ts', 'export const generated = true\n')
+  write(root, 'dist/kept.js', 'export const maintainedByHand = true\n')
+  git(root, ['add', '-A'])
+  git(root, ['commit', '-m', 'mixed generated files'])
+
+  git(root, ['checkout', '-q', 'main'])
+  git(root, ['checkout', '-q', '-b', 'generated-only'])
+  write(root, 'package-lock.json', '{\n  "lockfileVersion": 3\n}\n')
+  write(root, 'dist/bundle.js', 'var generated=true;\n')
+  git(root, ['add', '-A'])
+  git(root, ['commit', '-m', 'generated files only'])
+}
+
 export function createFixture(): Fixture {
   const path = mkdtempSync(join(tmpdir(), 'ghl-fixture-'))
 
@@ -231,6 +263,7 @@ export function createFixture(): Fixture {
   git(path, ['commit', '-m', 'other work'])
 
   stackedChain(path)
+  generatedBranches(path)
 
   // Left on main: reviewing `feature` must not need it checked out.
   git(path, ['checkout', '-q', 'main'])

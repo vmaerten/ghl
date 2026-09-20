@@ -35,6 +35,7 @@ import {
 } from './state.ts'
 import type { Comment, CommitsPayload, DiffPayload, PatchResult, RefsPayload } from './types.ts'
 import { runtimeRevision } from './version.ts'
+import { classifyGeneratedFiles } from './generated.ts'
 
 /**
  * One repository the server is willing to serve, as the CLI registers it.
@@ -302,6 +303,16 @@ export function createGhlServer({ repos, idleMs = 0, onStop }: GhlServerOptions)
             : rangeKey(base.ref, reviewing)
         const hashes = sectionHashes(patch)
 
+        // Attributes follow the version being read. A working-tree review uses
+        // its `.gitattributes`; taking uncommitted work out uses HEAD's; a ref or
+        // one commit uses its own tree even when another branch is checked out.
+        const attributeSource = commit?.sha ?? target ?? (committed ? 'HEAD' : null)
+        const generated = await classifyGeneratedFiles(
+          repoPath,
+          files.map((file) => file.path),
+          { source: attributeSource },
+        )
+
         // Ticks only survive while the file's diff is unchanged.
         const viewed = pruneStale(stored.state.viewed[range] ?? {}, hashes)
 
@@ -317,7 +328,11 @@ export function createGhlServer({ repos, idleMs = 0, onStop }: GhlServerOptions)
           state,
           untracked,
           untrackedIncluded,
-          files: files.map((f) => ({ ...f, hash: hashes[f.path] ?? null })),
+          files: files.map((f) => ({
+            ...f,
+            hash: hashes[f.path] ?? null,
+            generated: generated.get(f.path) ?? null,
+          })),
           totals,
           viewed,
           comments: serveComments(

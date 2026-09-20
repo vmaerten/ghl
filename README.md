@@ -24,6 +24,14 @@ lists files in the tree's order, not the patch's — git sorts whole paths bytew
 at the root would otherwise come first on one side and last on the other, and `j`/`k` would
 walk an order the eye is not following.
 
+Generated files stay out of both panes by default, behind one **N generated files** row in
+the sidebar. Its Show button puts them back in their natural tree order; the choice lives in
+the URL as `?generated=1`, and the topbar's totals always describe the complete diff. `ghl`
+recognises dependency lockfiles, `__snapshots__/`, `*.snap` and `dist/`, plus paths marked
+`linguist-generated` in `.gitattributes`. An explicit `-linguist-generated` wins over those
+built-in rules, for a hand-maintained file under a generated-looking path. Comments are not
+hidden silently: the generated row carries their `✎N` count and exports still include them.
+
 Lines can be commented, from the `+` in the gutter or with `c` on a selection. A comment is a
 remark meant to be handed to an agent, so it is filed against the code rather than against the
 comparison: it lives under the repository, keyed by path and by the text of the lines it was
@@ -180,7 +188,7 @@ Each layer keeps its own viewed ticks, since those are keyed by the revision ran
 ```bash
 pnpm test            # all of them
 pnpm test tree       # one suite: tree, resize, viewed, pickers, scroll, rename, order,
-                     # stack, commits, worktree, untracked
+                     # stack, commits, worktree, untracked, generated
 pnpm test lifecycle  # the shared process, without starting a browser
 ```
 
@@ -189,9 +197,10 @@ build taking over, two starts racing for the port, the idle stop, the Host allow
 runs against a copy of `bin/` and `src/` in a temp directory, on a port picked free at the
 last moment, so it never fights the `ghl` you have running on 7777.
 
-`state`, `refs`, `commits` and `worktree` need no browser either, and build their own
-repositories: what they ask has no answer in the shared fixture — a remote, a merge, a root
-commit which no base can bring into range, a checkout dirty in three different ways.
+`state`, `refs`, `commits`, `generated` and `worktree` need no browser either, and build
+their own repositories: what they ask has no answer in the shared fixture — a remote, a
+merge, a root commit which no base can bring into range, a checkout dirty in three
+different ways.
 
 The rest drive a headless Chrome over the real UI — `CHROME_PATH` overrides where it
 is found. Each run builds a throwaway git repository in a temp directory with a
@@ -209,6 +218,7 @@ serves, so testing without rebuilding silently tests the previous version.
 bin/ghl.ts       CLI — the only place that reads the current directory,
                  and the shared process it starts in the background
 src/git.ts       git layer, every call through `git -C <repoPath>`
+src/generated.ts generated-file rules and `.gitattributes` classification
 src/revision.ts  base resolution and patch construction
 src/server.ts    HTTP server, routes namespaced by repo
 src/state.ts     the viewed state, in .git/ghl/state.json

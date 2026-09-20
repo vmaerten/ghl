@@ -20,9 +20,13 @@ export interface FileStat extends FileCounts {
   status: GitStatus
 }
 
-/** As served: the hash identifies the diff section a viewed tick was set on. */
+/** Why a file is kept out of the rendered review by default. */
+export type GeneratedReason = 'gitattributes' | 'lockfile' | 'snapshot' | 'distribution'
+
+/** As served: review metadata derived from the complete patch and repository. */
 export interface ServedFileStat extends FileStat {
   hash: string | null
+  generated: GeneratedReason | null
 }
 
 /**

@@ -714,6 +714,44 @@ body.resizing * {
   color: var(--text);
 }
 
+.generated-files {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  width: calc(100% - 16px);
+  min-height: 30px;
+  margin: 0 8px 6px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--text-dim);
+  cursor: pointer;
+  font:
+    11px/1 ui-monospace,
+    monospace;
+  text-align: left;
+}
+
+.generated-files:hover {
+  border-color: var(--text-subtle);
+  color: var(--text);
+}
+
+.generated-caret,
+.generated-action {
+  color: var(--text-subtle);
+}
+
+.generated-viewed {
+  color: var(--success);
+}
+
+.generated-comments {
+  color: var(--accent);
+}
+
 /* The tree itself lives in a shadow DOM: nothing here reaches its rows, which
    are styled through the --trees-* custom properties set in FileTree.jsx. */
 .tree {
@@ -893,6 +931,31 @@ body.resizing * {
   min-width: 0;
   min-height: 0; /* lets the flex child actually shrink, so CodeView gets a real height */
   overflow: hidden; /* CodeView scrolls itself; scrolling here would freeze its virtual window */
+}
+
+.generated-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--bg);
+  color: var(--text-dim);
+}
+
+.generated-empty button {
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-raised);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.generated-empty button:hover {
+  border-color: var(--accent);
 }
 
 .visually-hidden {
