@@ -1,3 +1,8 @@
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { runReviewSession } from './reviewSession.ts'
+import { runCatalog } from './catalog.ts'
 import { createFixture } from './fixture.ts'
 import { withHarness, type Check, type Suite } from './harness.ts'
 import { runCommits } from './commits.ts'
@@ -13,6 +18,7 @@ import { runRepositoryFile } from './repositoryFile.ts'
 import { runReviewSelection } from './reviewSelection.ts'
 import { runCommentPersistence } from './commentPersistence.ts'
 
+import catalogUi from './suites/catalog.ts'
 import reviewPanel from './suites/reviewPanel.ts'
 import themes from './suites/themes.ts'
 import tree from './suites/tree.ts'
@@ -28,6 +34,10 @@ import commits from './suites/commits.ts'
 import worktree from './suites/worktree.ts'
 import untracked from './suites/untracked.ts'
 import search from './suites/search.ts'
+
+const discoveryHome = mkdtempSync(join(tmpdir(), 'ghl-test-discovery-'))
+process.env.XDG_CONFIG_HOME = join(discoveryHome, 'config')
+process.env.XDG_CACHE_HOME = join(discoveryHome, 'cache')
 
 const SUITES: Suite[] = [
   themes,
@@ -45,6 +55,7 @@ const SUITES: Suite[] = [
   worktree,
   untracked,
   search,
+  catalogUi,
 ]
 
 /**
@@ -52,6 +63,8 @@ const SUITES: Suite[] = [
  * its dedicated fixture in Chrome after validating the API.
  */
 const PLAIN: { name: string; run: (check: Check) => Promise<void> }[] = [
+  { name: 'catalog', run: runCatalog },
+  { name: 'review-session', run: runReviewSession },
   { name: 'review-selection', run: runReviewSelection },
   { name: 'comment-persistence', run: runCommentPersistence },
   { name: 'repository-file', run: runRepositoryFile },
@@ -134,4 +147,5 @@ if (selected.length > 0) {
 process.stdout.write(
   failures === 0 ? `\n${total} checks passed\n` : `\n${failures} of ${total} checks FAILED\n`,
 )
+rmSync(discoveryHome, { recursive: true, force: true })
 process.exit(failures === 0 ? 0 : 1)

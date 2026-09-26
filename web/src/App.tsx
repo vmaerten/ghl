@@ -1,3 +1,13 @@
+import CatalogPicker from './CatalogPicker.tsx'
+import {
+  readSession,
+  writeSession,
+  sessionSaver,
+  useSessionError,
+  guardPageExit,
+} from './reviewSession.ts'
+import { draftScope, RecoveredDrafts, acknowledgeDrafts } from './draftSession.tsx'
+import { writeRequest } from './reviewSession.ts'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useStableCallback } from '@pierre/diffs/react'
 import { useReviewDiff, type LoadedReviewDiff } from './useReviewDiff.tsx'
@@ -18,7 +28,7 @@ import type { BaseSource, DiffPayload, ServedComment, ViewedMap } from '../../sr
 /** The repo id lives in the path: /r/<repoId>. */
 function repoIdFromLocation() {
   const match = window.location.pathname.match(/^\/r\/([^/]+)/)
-  return match?.[1] ?? null
+  return match?.[1] ? decodeURIComponent(match[1]) : null
 }
 
 /** Well under the server's idle threshold, and cheap enough to be invisible. */
@@ -43,7 +53,9 @@ export default function App() {
   const loadRef = useRef(0)
   const controllerRef = useRef<AbortController | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [diffStyle, setDiffStyle] = useState<'unified' | 'split'>('unified')
+  const [diffStyle, setDiffStyle] = useState<'unified' | 'split'>(() =>
+    readSession(repoId ?? 'home').diffStyle === 'split' ? 'split' : 'unified',
+  )
   const [refreshing, setRefreshing] = useState(false)
   /** path -> hash of the diff section that was marked as read. */
   const [viewed, setViewedState] = useState<ViewedMap>({})
@@ -83,7 +95,6 @@ export default function App() {
    */
   const refresh = useCallback(async () => {
     if (!repoId) {
-      setError('no repository in the URL (expected /r/<repoId>)')
       return
     }
     const loadId = ++loadRef.current
@@ -154,6 +165,23 @@ export default function App() {
   )
   const { toggleCommitted, toggleUntracked } = select
 
+  const storageError = useSessionError()
+  useEffect(() => {
+    window.addEventListener('beforeunload', guardPageExit)
+    return () => window.removeEventListener('beforeunload', guardPageExit)
+  }, [])
+  useEffect(() => {
+    if (!repoId) return
+    const save = () =>
+      writeSession(repoId, {
+        url: location.pathname + location.search,
+        diffStyle,
+        openedAt: Date.now(),
+      })
+    save()
+    return sessionSaver(save)
+  }, [repoId, query, diffStyle])
+
   const stats = data?.totals ?? { files: 0, additions: 0, deletions: 0 }
   const viewedCount = Object.keys(viewed).length
 
@@ -169,7 +197,7 @@ export default function App() {
         return updated
       })
       try {
-        await fetch(`/r/${repoId}/api/viewed`, {
+        await writeRequest(`/r/${repoId}/api/viewed`, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ range: data.range, path, hash, viewed: next }),
@@ -185,15 +213,22 @@ export default function App() {
   const resetViewed = useCallback(async () => {
     if (!data) return
     setViewedState({})
-    await fetch(`/r/${repoId}/api/viewed`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ range: data.range, clear: true }),
-    })
+    try {
+      await writeRequest(`/r/${repoId}/api/viewed`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ range: data.range, clear: true }),
+      })
+    } catch (cause) {
+      setError(`could not reset viewed state: ${cause instanceof Error ? cause.message : cause}`)
+    }
   }, [data, repoId])
 
-  const submitComment = useStableCallback((draft: CommentSubmission) => {
-    if (data) void commentPersistence.submit(draft, data)
+  const submitComment = useStableCallback(async (draft: CommentSubmission) => {
+    if (data) {
+      await commentPersistence.submit(draft, data)
+      await commentPersistence.settle()
+    }
   })
 
   const deleteComment = useStableCallback(async (id: string) => {
@@ -351,6 +386,19 @@ export default function App() {
   const stack = data?.base.stack ?? null
   const repoName = data?.repo.path.split('/').filter(Boolean).at(-1) ?? 'Repository'
 
+  if (!repoId)
+    return (
+      <div className="app">
+        <header className="topbar">
+          <div className="appbar">
+            <strong>ghl / Local repositories</strong>
+            <ThemePicker theme={theme} onChange={chooseTheme} />
+          </div>
+        </header>
+        <CatalogPicker repoId={null} home />
+      </div>
+    )
+
   return (
     <div className="app">
       <header className="topbar">
@@ -361,9 +409,15 @@ export default function App() {
             </span>
             <span className="product-name">ghl</span>
             <span className="repo-divider">/</span>
-            <strong className="repo-name" title={data?.repo.path}>
-              {repoName}
-            </strong>
+            <CatalogPicker
+              repoId={repoId}
+              name={repoName}
+              beforeNavigate={async (retry) => {
+                await commentPersistence.settle(retry)
+                const snapshot = commentPersistence.getSnapshot()
+                acknowledgeDrafts(repoId, snapshot.comments, snapshot.saving)
+              }}
+            />
             <span className="review-badge">Review</span>
           </div>
 
@@ -713,6 +767,8 @@ export default function App() {
         {copied ? 'Comments copied to clipboard' : ''}
       </span>
       <CommentsPanel
+        scope={draftScope(repoId, data?.query ?? query)}
+        fingerprints={Object.fromEntries((data?.files ?? []).map((file) => [file.path, file.hash]))}
         open={commentsOpen}
         comments={comments}
         currentRange={data?.range ?? ''}
@@ -757,6 +813,17 @@ export default function App() {
         </div>
       )}
 
+      {storageError && (
+        <p className="warning" role="alert">
+          {storageError}
+        </p>
+      )}
+      {data && (
+        <RecoveredDrafts
+          scope={draftScope(repoId, data.query)}
+          fingerprints={Object.fromEntries(data.files.map((file) => [file.path, file.hash]))}
+        />
+      )}
       {error && <p className="message">{error}</p>}
 
       {!error && data && entries.length === 0 && (

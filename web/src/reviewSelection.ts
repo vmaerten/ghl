@@ -1,3 +1,4 @@
+import { writeRequest } from './reviewSession.ts'
 import { useMemo, useSyncExternalStore } from 'react'
 
 interface SelectionAdapter {
@@ -88,7 +89,7 @@ export function useReviewSelection(repoId: string | null) {
       createReviewSelection(new URL(location.href), {
         replaceUrl: (url) => history.replaceState(null, '', url),
         rememberBase: async (base, target) => {
-          const response = await fetch(`/r/${repoId}/api/base`, {
+          const response = await writeRequest(`/r/${repoId}/api/base`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ base, target }),

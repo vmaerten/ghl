@@ -254,3 +254,48 @@ export interface RefsPayload {
 export interface CommitsPayload {
   commits: CommitDetail[]
 }
+
+export interface CatalogWorktree {
+  id: string
+  path: string
+  branch: string | null
+  head: string
+  available: boolean
+  locked: boolean
+  external: boolean
+  error?: string
+}
+
+export interface CatalogRepository {
+  /** Main checkout; null for bare repositories. */
+  mainWorktreeId: string | null
+  id: string
+  name: string
+  commonDir: string
+  roots: string[]
+  explicit: boolean
+  worktrees: CatalogWorktree[]
+}
+
+export interface CatalogPayload {
+  repositories: CatalogRepository[]
+  favorites: string[]
+  roots: string[]
+  exclusions: string[]
+  scan: {
+    active: boolean
+    finishedAt: number | null
+    visited: number
+    errors: { path: string; message: string }[]
+  }
+}
+
+export interface WorktreeStatus {
+  id: string
+  branch: string | null
+  head: string
+  tracked: number
+  untracked: number
+  conflicts: number
+  error?: string
+}

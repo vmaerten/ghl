@@ -1,7 +1,9 @@
-import { createHash } from 'node:crypto'
+import { Catalog, type CatalogPaths } from './catalog.ts'
+import { repoIdFor } from './checkoutId.ts'
+export { repoIdFor } from './checkoutId.ts'
 import { createReadStream, existsSync, statSync } from 'node:fs'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
-import { basename, extname, join, normalize } from 'node:path'
+import { extname, join, normalize } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { currentBranch, listCommits, listRefDetails, repoState, resolveRepoRoot } from './git.ts'
@@ -37,6 +39,7 @@ export type StopReason = 'idle' | 'requested'
 
 export interface GhlServerOptions {
   repos: RepoEntry[]
+  catalogPaths?: CatalogPaths
   /**
    * Milliseconds without a request before `onStop('idle')` fires; 0 disables it.
    * The front end sends a heartbeat while its tab is visible, so this measures
@@ -93,15 +96,6 @@ const MIME: Record<string, string> = {
   '.wasm': 'application/wasm',
 }
 
-/**
- * Stable, readable id for a repository. The path hash keeps two worktrees of the
- * same repo from colliding; 9 of the repositories here have several.
- */
-export function repoIdFor(repoPath: string): string {
-  const hash = createHash('sha1').update(repoPath).digest('hex').slice(0, 7)
-  return `${basename(repoPath)}-${hash}`
-}
-
 const json = (res: ServerResponse, status: number, body: unknown): void => {
   const payload = JSON.stringify(body)
   res.writeHead(status, {
@@ -156,8 +150,17 @@ function resolveRequest(repoPath: string, url: URL) {
  * repositories after the fact: one process serves every checkout the CLI is
  * pointed at, rather than one process per tab.
  */
-export function createGhlServer({ repos, idleMs = 0, onStop }: GhlServerOptions): Server {
+export function createGhlServer({
+  repos,
+  idleMs = 0,
+  onStop,
+  catalogPaths,
+}: GhlServerOptions): Server {
   const registry = new Map(repos.map((r) => [repoIdFor(r.repoPath), r] as const))
+  const catalog = new Catalog(
+    catalogPaths,
+    repos.map((repo) => repo.repoPath),
+  )
   let lastSeen = Date.now()
 
   const server = createServer(async (req, res) => {
@@ -199,11 +202,72 @@ export function createGhlServer({ repos, idleMs = 0, onStop }: GhlServerOptions)
         }
         // Resolved here too, not only in the CLI: it rejects a path that is not
         // a repository, and registering a subdirectory registers its root.
-        const repoPath = await resolveRepoRoot(body.repoPath)
+        const known = catalog.state.repositories
+          .flatMap((r) => r.worktrees)
+          .find((w) => w.path === body.repoPath)
+        const repoPath = known
+          ? await catalog.validate(known.id)
+          : await resolveRepoRoot(body.repoPath)
+        await catalog.register(repoPath)
         const id = repoIdFor(repoPath)
         // set(), so registering the same repository twice keeps one entry.
         registry.set(id, { repoPath })
         return json(res, 200, { id, path: repoPath })
+      }
+
+      if (url.pathname === '/api/catalog' && req.method === 'GET')
+        return json(res, 200, catalog.state)
+      if (url.pathname === '/api/catalog/scan' && req.method === 'POST') {
+        const body = JSON.parse((await readBody(req)) || '{}')
+        void catalog.scan(body.force === true)
+        return json(res, 200, catalog.state)
+      }
+      if (url.pathname === '/api/catalog/reset' && req.method === 'POST') {
+        void catalog.reset()
+        return json(res, 200, catalog.state)
+      }
+      if (url.pathname === '/api/catalog/favorite' && req.method === 'PUT') {
+        const body = JSON.parse((await readBody(req)) || '{}')
+        if (
+          typeof body.id !== 'string' ||
+          typeof body.favorite !== 'boolean' ||
+          !catalog.state.repositories.some((repo) => repo.id === body.id)
+        )
+          return json(res, 400, { error: 'Expected a known repository and a favorite boolean' })
+        await catalog.setFavorite(body.id, body.favorite)
+        return json(res, 200, catalog.state)
+      }
+      if (url.pathname === '/api/roots') {
+        if (req.method === 'POST' || req.method === 'DELETE') {
+          const body = JSON.parse((await readBody(req)) || '{}')
+          if (typeof body.path !== 'string' || !body.path.trim())
+            return json(res, 400, { error: 'A root path is required' })
+          if (req.method === 'POST') await catalog.addRoot(body.path)
+          else await catalog.removeRoot(body.path)
+          void catalog.scan(true)
+        } else if (req.method !== 'GET') return json(res, 405, { error: 'Method not allowed' })
+        return json(res, 200, { roots: catalog.state.roots, exclusions: catalog.state.exclusions })
+      }
+      if (url.pathname === '/api/discovery-settings' && req.method === 'PUT') {
+        const body = JSON.parse((await readBody(req)) || '{}')
+        if (
+          !Array.isArray(body.exclusions) ||
+          !body.exclusions.every((name: unknown) => typeof name === 'string')
+        )
+          return json(res, 400, { error: 'Expected exclusions' })
+        await catalog.setExclusions(body.exclusions)
+        void catalog.scan(true)
+        return json(res, 200, catalog.state)
+      }
+      if (url.pathname === '/api/catalog/status' && req.method === 'POST') {
+        const body = JSON.parse((await readBody(req)) || '{}')
+        if (
+          !Array.isArray(body.ids) ||
+          body.ids.length > 100 ||
+          !body.ids.every((id: unknown) => typeof id === 'string' && catalog.find(id))
+        )
+          return json(res, 400, { error: 'Expected up to 100 known worktrees' })
+        return json(res, 200, { statuses: await catalog.status(body.ids) })
       }
 
       if (url.pathname === '/api/shutdown' && req.method === 'POST') {
@@ -220,14 +284,22 @@ export function createGhlServer({ repos, idleMs = 0, onStop }: GhlServerOptions)
 
       // Built assets are requested from the root, whatever repo is being viewed.
       if (segments[0] !== 'r') {
-        if (req.method === 'GET' && serveStatic(res, url.pathname)) return
+        if (
+          req.method === 'GET' &&
+          serveStatic(res, url.pathname === '/' ? 'index.html' : url.pathname)
+        )
+          return
         return json(res, 404, { error: 'not found' })
       }
 
       if (segments.length < 2) return json(res, 404, { error: 'not found' })
 
-      const repoId = segments[1] ?? ''
-      const entry = registry.get(repoId)
+      const repoId = decodeURIComponent(segments[1] ?? '')
+      let entry = registry.get(repoId)
+      if (!entry && catalog.find(repoId)) {
+        entry = { repoPath: await catalog.validate(repoId) }
+        registry.set(repoId, entry)
+      }
       if (!entry) return json(res, 404, { error: `unknown repo: ${repoId}` })
 
       const route = segments.slice(2).join('/')
@@ -427,6 +499,9 @@ export function createGhlServer({ repos, idleMs = 0, onStop }: GhlServerOptions)
     server.on('close', () => clearInterval(timer))
   }
 
+  server.once('listening', () => {
+    void catalog.scan()
+  })
   return server
 }
 

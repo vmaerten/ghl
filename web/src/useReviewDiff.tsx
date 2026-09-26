@@ -1,3 +1,5 @@
+import { draftScope, readDrafts, saveDraft, acknowledgeDrafts } from './draftSession.tsx'
+import { readSession, sessionSaver, writeSession } from './reviewSession.ts'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   getFiletypeFromFileName,
@@ -47,7 +49,7 @@ interface ReviewDiffOptions {
   onCopy: (comment: ServedComment) => void
   saving: Map<string, SaveState>
   onViewedChange: (path: string, viewed: boolean) => void
-  onSubmit: (comment: CommentSubmission) => void
+  onSubmit: (comment: CommentSubmission) => Promise<void>
   onDelete: (id: string) => void
   onRetry: (comment: ServedComment) => void
   onRevealFile: (path: string) => void
@@ -112,6 +114,31 @@ export function useReviewDiff({
   }, [viewed, data?.range])
   const [composer, setComposer] = useState<Composer | null>(null)
   const draftsRef = useRef(new Map<string, string>())
+  const submittedDrafts = useRef(new Set<string>())
+  const scope = draftScope(repoId, data?.query ?? '')
+  const saveComposer = useStableCallback((next: Composer, body: string, submitted = false) => {
+    saveDraft(scope, `${next.key}:${next.editing ?? 'new'}`, {
+      composer: next,
+      body,
+      fingerprint: data?.files.find((file) => file.path === next.path)?.hash ?? null,
+      source: 'diff',
+      submitted,
+    })
+  })
+  useEffect(() => {
+    if (!data) return
+    acknowledgeDrafts(repoId, comments, saving)
+    const saved = Object.entries(readDrafts(draftScope(repoId, data.query))).filter(
+      ([key, draft]) =>
+        !submittedDrafts.current.has(`${scope}:${key}`) &&
+        draft.source === 'diff' &&
+        data.files.some(
+          (file) => file.path === draft.composer.path && file.hash === draft.fingerprint,
+        ),
+    )
+    draftsRef.current = new Map(saved.map(([key, draft]) => [key, draft.body]))
+    setComposer(saved.at(-1)?.[1].composer ?? null)
+  }, [repoId, data, scope, comments, saving])
   const gutterRequestRef = useRef<SelectedLineRange | null>(null)
   const [contextErrors, setContextErrors] = useState<Record<string, ContextError>>({})
   const [searchOpen, setSearchOpen] = useState(false)
@@ -379,20 +406,25 @@ export function useReviewDiff({
       range.side !== undefined && range.endSide !== undefined && range.side !== range.endSide
     const start = crossed ? range.end : Math.min(range.start, range.end)
     const end = crossed ? range.end : Math.max(range.start, range.end)
-    setComposer({ key: threadKey(path, side, end), path, side, start, end, editing: null })
+    const next = { key: threadKey(path, side, end), path, side, start, end, editing: null }
+    setComposer(next)
+    saveComposer(next, draftsRef.current.get(`${next.key}:new`) ?? '')
   })
 
   const editComment = useStableCallback((comment: Comment) => {
     const key = threadKey(comment.path, comment.side, comment.end)
-    draftsRef.current.set(`${key}:${comment.id}`, comment.body)
-    setComposer({
+    const body = draftsRef.current.get(`${key}:${comment.id}`) ?? comment.body
+    draftsRef.current.set(`${key}:${comment.id}`, body)
+    const next = {
       key,
       path: comment.path,
       side: comment.side,
       start: comment.start,
       end: comment.end,
       editing: comment.id,
-    })
+    }
+    setComposer(next)
+    saveComposer(next, body)
   })
 
   /**
@@ -405,6 +437,7 @@ export function useReviewDiff({
    * the page, which is what made it look like the diff had stopped responding.
    */
   const closeComposer = useStableCallback(() => {
+    if (composer) saveDraft(scope, `${composer.key}:${composer.editing ?? 'new'}`, null)
     setComposer(null)
     viewRef.current?.clearSelectedLines()
   })
@@ -431,6 +464,55 @@ export function useReviewDiff({
     (path: string) => goTo(items.findIndex((item) => item.path === path)),
     [items, goTo],
   )
+
+  const restored = useRef<string | null>(null)
+  useEffect(() => {
+    if (!data || !items.length) return
+    const key = `${repoId}:reading:${data.query}`
+    if (restored.current === key) return
+    const saved = readSession(key)
+    const item = items.find((candidate) => candidate.path === saved.path)
+    if (!item) return
+    const timer = setTimeout(() => {
+      restored.current = key
+      selectByPath(item.path)
+      if (typeof saved.line === 'number')
+        viewRef.current?.scrollTo({
+          type: 'line',
+          id: item.id,
+          lineNumber: saved.line,
+          side: saved.side === 'deletions' ? 'deletions' : 'additions',
+          align: 'start',
+        })
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [data, items, repoId, selectByPath])
+  const saveReading = useStableCallback(() => {
+    if (!data) return
+    const pane = paneRef.current
+    const top = pane?.getBoundingClientRect().top ?? 0
+    let path = items[activeIndex]?.path
+    let line: number | undefined
+    let side = 'additions'
+    for (const host of pane?.querySelectorAll('diffs-container') ?? []) {
+      if (host.getBoundingClientRect().bottom <= top) continue
+      const title = host.shadowRoot?.querySelector('[data-title]')?.textContent?.trim()
+      if (title && items.some((item) => item.path === title)) path = title
+      const row = [...(host.shadowRoot?.querySelectorAll('[data-line]') ?? [])].find(
+        (candidate) => candidate.getBoundingClientRect().top >= top,
+      )
+      const number = Number(row?.getAttribute('data-line'))
+      if (number > 0) line = number
+      if (
+        row?.getAttribute('data-line-type')?.includes('deletion') ||
+        row?.closest('[data-code="deletions"]')
+      )
+        side = 'deletions'
+      break
+    }
+    writeSession(`${repoId}:reading:${data.query}`, { path, line, side })
+  })
+  useEffect(() => sessionSaver(saveReading), [saveReading])
 
   /** Browser find cannot see CodeView rows that the virtual window has unmounted. */
   const searchMatches = useMemo(
@@ -510,13 +592,22 @@ export function useReviewDiff({
     })
   }, [searchOpen, activeSearchMatch, items, revealFile])
 
-  const submitComment = useStableCallback((body: string) => {
+  const submitComment = useStableCallback(async (body: string) => {
     if (!composer || !data) return
     const { path, side, start, end, editing } = composer
-    onSubmit({ path, side, start, end, editing, body })
-    draftsRef.current.delete(`${composer.key}:${editing ?? 'new'}`)
-    // Releasing the selection lets the gutter button follow the pointer again.
-    closeComposer()
+    const key = `${composer.key}:${editing ?? 'new'}`
+    const savedScope = scope
+    saveComposer(composer, body, true)
+    submittedDrafts.current.add(`${scope}:${key}`)
+    setComposer(null)
+    viewRef.current?.clearSelectedLines()
+    try {
+      await onSubmit({ path, side, start, end, editing, body })
+      saveDraft(savedScope, key, null)
+      draftsRef.current.delete(key)
+    } catch {
+      /* The optimistic comment exposes retry; its draft also survives reload. */
+    }
   })
 
   const commentSelection = useStableCallback(() => {
@@ -606,6 +697,9 @@ export function useReviewDiff({
           currentRange={data?.range ?? ''}
           saving={saving}
           drafts={draftsRef}
+          onDraft={(body) => {
+            if (composer) saveComposer(composer, body)
+          }}
           onSubmit={submitComment}
           onCancel={closeComposer}
           onEdit={editComment}
@@ -626,6 +720,7 @@ export function useReviewDiff({
       editComment,
       deleteComment,
       save,
+      saveComposer,
     ],
   )
 

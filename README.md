@@ -16,6 +16,7 @@ but pushing it just to look at it is not worth the trip.
 | `t` | change the revision under review |
 | `l` | show one commit, or all of them |
 | `r` | refresh the diff |
+| `o` | open the repository picker |
 
 The file tree uses coloured file-type icons and neutral names, with a coloured git status (added,
 modified, deleted, renamed, untracked), and folds chains of single-child directories into
@@ -97,6 +98,9 @@ ghl --print            # summary on stdout, no server
 ghl --base main        # compare against an explicit revision
 ghl --port 8080        # listen somewhere else (or set $GHL_PORT)
 ghl --no-daemon        # serve from this process and stay in the foreground
+ghl --browse           # open the local repository catalogue from any folder
+ghl --root ~/dev --browse # remember a discovery root and browse its projects
+ghl --root ~/work --root ~/personal --no-open # add several roots
 
 ghl comments           # the review's comments as markdown, on stdout
 ghl comments --json    # the same, to parse
@@ -119,6 +123,61 @@ no `/etc/hosts` entry, no dnsmasq — but the name is checked at startup and fal
 `127.0.0.1` rather than print a URL that would not connect. The `repoId` is derived from the
 repository path, so each checkout keeps its own address; a second `ghl` running at the same
 time takes the next free port.
+
+Click the repository name, or press `o`, to open another repository. The picker lists each
+repository once and opens its main checkout. Search matches repository names and paths;
+Enter opens the first match. Arrow keys move through the choices, and Escape closes the
+picker and returns focus. The same list fills the screen on mobile. Choose the branch to
+review within the review; branches used by linked worktrees are available there too.
+Opening a review never creates a worktree or checks out a branch.
+Click the star beside a repository to add or remove it from favorites. Favorites appear
+first and are saved with your discovery settings, surviving restarts and **Clear & rescan**.
+
+Outside a Git repository, `ghl` opens the catalogue at `/`. **Manage roots** adds and removes
+folders, accepts `~/…`, and edits the excluded directory names. `--root <path>` adds a root
+permanently and is repeatable; relative CLI paths are resolved from the current directory.
+`--browse` explicitly opens the catalogue. `comments`, `--print`, revisions and `--base`
+still require a repository; `--browse` cannot be combined with them, and `--root` cannot be
+combined with `comments` or `--print`.
+
+Discovery starts after the server begins listening, with cached results available immediately.
+Opening the picker refreshes a catalogue older than 30 seconds; **Rescan** forces a scan.
+**Clear & rescan** rebuilds the catalogue from your roots and exclusions, forgetting cached
+entries (including previously opened repositories). Repository files, comments, drafts and
+open reviews are preserved.
+There is no recursive watcher or permanent scan timer. The page polls scan progress only
+while the catalogue is visible and a scan is running. Git status is requested for the listed
+main checkouts and cached for ten seconds; it distinguishes modified files, untracked files and
+conflicts. A failed status query is never labelled clean.
+
+The scanner includes nested repositories, submodules and ordinary hidden folders. Linked
+checkout directories and their descendants are skipped, including stale worktree pointers.
+By default it skips `.git`, `node_modules`, `.venv`, `.cache`, `dist`, `build`, `.terraform` and
+`.terragrunt-cache`; `.git` is always skipped. Existing discovery settings also gain the
+Terraform and Terragrunt exclusions. You can edit these in **Manage roots**.
+It does not follow symlinks encountered below a root, but an explicitly configured symlink
+root is resolved to its real path. Worktrees sharing a common Git directory are grouped;
+independent clones remain separate. Linked worktrees are not separate picker destinations.
+Bare repositories are shown without an open action because they have no main checkout.
+Existing worktree review URLs and launching `ghl` from a worktree still work.
+Partial scan errors appear in an expandable summary.
+Stale `.git` files report the missing Git metadata path; a temporarily
+unavailable root does not erase its known projects. Opening a destination validates it again.
+
+Discovery configuration lives in `$XDG_CONFIG_HOME/ghl/discovery.json` (default
+`~/.config/ghl/discovery.json`), and the catalogue in `$XDG_CACHE_HOME/ghl/catalog.json`
+(default `~/.cache/ghl/catalog.json`). Both are versioned and written atomically, outside the
+installation directory. Removing a root removes its discovery contribution; reviews opened
+explicitly remain available. Cached destinations can be opened again after a daemon restart.
+
+Within one browser tab, switching repositories restores the last review URL, diff layout,
+reading position and drafts from `sessionStorage`. Reloads preserve that session too; an
+explicit URL always chooses its own comparison. Drafts from the diff and Comments panel are
+isolated by checkout and comparison. If their file changed, the text appears under
+**Recovered drafts**, where it can be selected for copying or discarded. Switching waits for
+pending comments, deletions, Viewed updates and remembered-base writes. Failed writes offer
+a retry, and unavailable browser storage blocks switching rather than losing draft text.
+Saved comments and Viewed state keep their existing Git storage; no migration is needed.
 
 A fixed port makes the address guessable, so the server answers only to `ghl.localhost`,
 `localhost` and the loopback addresses: a page that re-resolved its own domain to

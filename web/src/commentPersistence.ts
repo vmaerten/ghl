@@ -1,3 +1,4 @@
+import { writeRequest } from './reviewSession.ts'
 import { useMemo, useSyncExternalStore } from 'react'
 
 import type { Comment, ServedComment } from '../../src/types.ts'
@@ -95,6 +96,17 @@ export function createCommentPersistence(transport: CommentTransport) {
   }
 
   return {
+    settle: async (retry = false) => {
+      while (writes.size) await Promise.all(writes.values())
+      const entries = [...local.values()]
+      if (retry)
+        for (const entry of entries) {
+          if (entry.kind === 'save' && entry.status === 'failed')
+            await save(entry.comment, entry.query, entry.editing)
+        }
+      if ([...local.values()].some((entry) => entry.status === 'failed'))
+        throw new Error('Comments could not be saved. Retry before switching repositories.')
+    },
     getSnapshot: () => snapshot,
     subscribe: (listener: () => void) => {
       listeners.add(listener)
@@ -192,7 +204,7 @@ export function useCommentPersistence(repoId: string | null) {
     () =>
       createCommentPersistence({
         save: async (comment, query, editing) => {
-          const response = await fetch(`/r/${repoId}/api/comments${query}`, {
+          const response = await writeRequest(`/r/${repoId}/api/comments${query}`, {
             method: editing ? 'PATCH' : 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify(comment),
@@ -202,9 +214,12 @@ export function useCommentPersistence(repoId: string | null) {
           return body.comment
         },
         remove: async (id) => {
-          const response = await fetch(`/r/${repoId}/api/comments?id=${encodeURIComponent(id)}`, {
-            method: 'DELETE',
-          })
+          const response = await writeRequest(
+            `/r/${repoId}/api/comments?id=${encodeURIComponent(id)}`,
+            {
+              method: 'DELETE',
+            },
+          )
           if (!response.ok) throw new Error(`HTTP ${response.status}`)
         },
       }),

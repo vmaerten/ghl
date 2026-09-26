@@ -1,3 +1,4 @@
+import { readDrafts, saveDraft } from './draftSession.tsx'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ServedComment } from '../../src/types.ts'
 import type { SaveState } from './commentPersistence.ts'
@@ -5,6 +6,8 @@ import CommentCard, { lineLabel } from './CommentCard.tsx'
 import Icon from './Icon.tsx'
 
 export default function CommentsPanel({
+  scope,
+  fingerprints,
   open,
   comments,
   currentRange,
@@ -19,6 +22,8 @@ export default function CommentsPanel({
   onDelete,
   onRetry,
 }: {
+  scope: string
+  fingerprints: Record<string, string | null>
   open: boolean
   comments: ServedComment[]
   currentRange: string
@@ -29,13 +34,44 @@ export default function CommentsPanel({
   onCopy: (comment?: ServedComment) => void
   onView: (comment: ServedComment) => void
   canView: (comment: ServedComment) => boolean
-  onUpdate: (comment: ServedComment, body: string) => void
+  onUpdate: (comment: ServedComment, body: string) => Promise<void>
   onDelete: (id: string) => void
   onRetry: (comment: ServedComment) => void
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
+  const [saveError, setSaveError] = useState('')
+  const fingerprintKey = JSON.stringify(fingerprints)
+  useEffect(() => {
+    const currentFingerprints = JSON.parse(fingerprintKey) as Record<string, string | null>
+    const saved = Object.values(readDrafts(scope)).findLast(
+      (entry) =>
+        entry.source === 'panel' && currentFingerprints[entry.composer.path] === entry.fingerprint,
+    )
+    setEditing(saved?.composer.editing ?? null)
+    setDraft(saved?.body ?? '')
+  }, [scope, fingerprintKey])
+  const persistDraft = (comment: ServedComment, body: string, submitted = false) =>
+    saveDraft(scope, `panel:${comment.id}`, {
+      composer: {
+        key: comment.id,
+        path: comment.path,
+        side: comment.side,
+        start: comment.start,
+        end: comment.end,
+        editing: comment.id,
+      },
+      body,
+      source: 'panel',
+      submitted,
+      fingerprint: fingerprints[comment.path] ?? null,
+    })
+  const cancel = () => {
+    if (editing) saveDraft(scope, `panel:${editing}`, null)
+    setEditing(null)
+    setSaveError('')
+  }
   const groups = useMemo(() => {
     const result = new Map<string, ServedComment[]>()
     for (const comment of comments.toSorted(
@@ -52,10 +88,15 @@ export default function CommentsPanel({
     if (open && !dialog.current?.open) dialog.current?.showModal()
     else if (!open && dialog.current?.open) dialog.current.close()
   }, [open])
-  const update = (comment: ServedComment) => {
+  const update = async (comment: ServedComment) => {
     if (!draft.trim()) return
-    onUpdate(comment, draft.trim())
-    setEditing(null)
+    try {
+      persistDraft(comment, draft.trim(), true)
+      await onUpdate(comment, draft.trim())
+      cancel()
+    } catch {
+      setSaveError('Could not save this edit. Your draft is kept; try Update again.')
+    }
   }
   return (
     <dialog
@@ -139,7 +180,10 @@ export default function CommentsPanel({
                         autoFocus
                         rows={5}
                         value={draft}
-                        onChange={(event) => setDraft(event.target.value)}
+                        onChange={(event) => {
+                          setDraft(event.target.value)
+                          persistDraft(comment, event.target.value)
+                        }}
                         onKeyDown={(event) => {
                           if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
                             event.preventDefault()
@@ -147,13 +191,18 @@ export default function CommentsPanel({
                           } else if (event.key === 'Escape') {
                             event.preventDefault()
                             event.stopPropagation()
-                            setEditing(null)
+                            cancel()
                           }
                         }}
                       />
                     </label>
+                    {saveError && (
+                      <p className="warning" role="alert">
+                        {saveError}
+                      </p>
+                    )}
                     <footer>
-                      <button type="button" className="button" onClick={() => setEditing(null)}>
+                      <button type="button" className="button" onClick={cancel}>
                         Cancel
                       </button>
                       <button type="submit" className="button primary" disabled={!draft.trim()}>
@@ -171,7 +220,14 @@ export default function CommentsPanel({
                     onCopy={onCopy}
                     onEdit={(item) => {
                       setEditing(item.id)
-                      setDraft(item.body)
+                      const saved = readDrafts(scope)[`panel:${item.id}`]
+                      const body =
+                        saved && saved.fingerprint === (fingerprints[item.path] ?? null)
+                          ? saved.body
+                          : item.body
+                      setDraft(body)
+                      persistDraft(item, body)
+                      setSaveError('')
                     }}
                     onDelete={onDelete}
                     onRetry={onRetry}

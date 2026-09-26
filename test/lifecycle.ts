@@ -1,5 +1,5 @@
 import { execFileSync, spawn } from 'node:child_process'
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer, get as httpGet } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -55,6 +55,11 @@ function cli(runtime: Runtime, cwd: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [join(runtime.path, 'bin', 'ghl.ts'), ...args], {
       cwd,
+      env: {
+        ...process.env,
+        XDG_CONFIG_HOME: join(runtime.path, 'config'),
+        XDG_CACHE_HOME: join(runtime.path, 'cache'),
+      },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
     let out = ''
@@ -352,6 +357,58 @@ export async function runLifecycle(check: Check): Promise<void> {
     check(
       '  quoting the line, so the file was really in the patch',
       onUntracked.includes('export const sketch = 1'),
+    )
+    const browsePort = await freePort()
+    ports.push(browsePort)
+    const browse = await cli(runtime, runtime.path, ['--no-open', '--port', String(browsePort)])
+    check(
+      'ghl outside Git opens the catalogue',
+      browse.includes(`:${browsePort}/`) && !browse.includes('/r/'),
+    )
+    await cli(runtime, runtime.path, [
+      '--root',
+      one.path,
+      '--browse',
+      '--no-open',
+      '--port',
+      String(browsePort),
+    ])
+    const rootList = await (await fetch(`http://127.0.0.1:${browsePort}/api/roots`)).json()
+    check(
+      'CLI adds roots to a running daemon',
+      rootList.roots.includes(await resolveRepoRoot(one.path)),
+    )
+    runtime.stamp('rev-three')
+    await cli(runtime, runtime.path, ['--browse', '--no-open', '--port', String(browsePort)])
+    check(
+      'roots survive daemon replacement',
+      (await (await fetch(`http://127.0.0.1:${browsePort}/api/roots`)).json()).roots.length === 1,
+    )
+    await stop(browsePort)
+    const cachePath = join(runtime.path, 'cache', 'ghl', 'catalog.json')
+    const previousCache = readFileSync(cachePath, 'utf8')
+    await cli(runtime, one.path, ['--print'])
+    await cli(runtime, one.path, ['comments'])
+    check(
+      'print and comments do not start discovery',
+      readFileSync(cachePath, 'utf8') === previousCache && daemonCount(runtime) === 0,
+    )
+    let incompatible = false
+    try {
+      await cli(runtime, runtime.path, [
+        '--browse',
+        '--base',
+        'main',
+        '--no-open',
+        '--port',
+        String(browsePort),
+      ])
+    } catch (error) {
+      incompatible = String(error).includes('--browse cannot be combined')
+    }
+    check(
+      'incompatible browse flags fail before starting a daemon',
+      incompatible && (await health(browsePort)) === null,
     )
   } finally {
     for (const port of ports) await stop(port)

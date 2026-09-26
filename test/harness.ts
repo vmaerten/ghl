@@ -1,8 +1,11 @@
-import { existsSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { platform } from 'node:process'
 
 import { launch, type Browser, type Page } from 'puppeteer-core'
 
+import { resolveRepoRoot } from '../src/git.ts'
 import { createGhlServer, listen, repoIdFor } from '../src/server.ts'
 
 /** Where Chrome usually lives, unless CHROME_PATH says otherwise. */
@@ -64,7 +67,15 @@ export async function withHarness<T>(
   repoPath: string,
   body: (make: (target?: string) => Promise<Harness>, browser: Browser) => Promise<T>,
 ): Promise<T> {
-  const server = createGhlServer({ repos: [{ repoPath }] })
+  repoPath = await resolveRepoRoot(repoPath)
+  const discoveryDir = mkdtempSync(join(tmpdir(), 'ghl-browser-catalog-'))
+  const server = createGhlServer({
+    repos: [{ repoPath }],
+    catalogPaths: {
+      config: join(discoveryDir, 'config.json'),
+      cache: join(discoveryDir, 'cache.json'),
+    },
+  })
   const port = await listen(server, 0)
   const base = `http://127.0.0.1:${port}/r/${repoIdFor(repoPath)}`
 
@@ -92,6 +103,9 @@ export async function withHarness<T>(
       }
 
       const load = async (query?: string) => {
+        // Fixture navigation must wait for writes triggered by the preceding UI action.
+        // The page correctly guards unload while those writes are still pending.
+        await page.waitForNetworkIdle({ idleTime: 100 })
         await page.goto(url(query), { waitUntil: 'networkidle0' })
         await page.waitForSelector('file-tree-container', { timeout: 30_000 })
         // The tree mounts before Shiki has finished with the diff pane.
@@ -105,6 +119,7 @@ export async function withHarness<T>(
   } finally {
     await browser.close()
     await new Promise<void>((resolve) => server.close(() => resolve()))
+    rmSync(discoveryDir, { recursive: true, force: true })
   }
 }
 

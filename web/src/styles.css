@@ -1765,3 +1765,223 @@ button:disabled {
     gap: 6px;
   }
 }
+
+/* The repository picker follows the app's existing surface and type tokens. */
+.catalog-anchor {
+  position: relative;
+}
+.catalog-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+}
+.catalog-panel {
+  position: absolute;
+  z-index: 100;
+  top: calc(100% + 14px);
+  left: 0;
+  width: min(760px, calc(100vw - 32px));
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 12px 36px #0005;
+  color: var(--text);
+  font-size: 13px;
+  overflow: auto;
+  max-height: calc(100dvh - 80px);
+}
+.catalog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+}
+.catalog-search {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 0 16px 12px;
+  padding: 9px 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+.catalog-repos {
+  border-top: 1px solid var(--border-subtle);
+  padding: 8px;
+  max-height: 420px;
+  overflow: auto;
+}
+.catalog-repo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  padding: 12px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.catalog-repo:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+.catalog-repo small,
+.catalog-path,
+.catalog-status {
+  color: var(--text-dim);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.catalog-repo-row {
+  display: flex;
+  align-items: flex-start;
+  border-radius: 5px;
+}
+.catalog-repo-row:has(.catalog-repo[aria-current='page']) {
+  background: var(--accent-soft);
+}
+.catalog-favorite {
+  flex-shrink: 0;
+  margin: 8px 8px 0 0;
+}
+.catalog-favorite[aria-pressed='true'] {
+  color: var(--accent);
+}
+.catalog-repo:not(:disabled):hover {
+  background: var(--bg-overlay);
+}
+.catalog-panel button:focus-visible,
+.catalog-panel input:focus-visible,
+.catalog-panel textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.catalog-repo-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.catalog-repo-title small {
+  margin-left: auto;
+  color: var(--accent);
+  font-weight: 400;
+}
+.catalog-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+.catalog-footer > span {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.catalog-empty {
+  padding: 28px 20px;
+  color: var(--text-dim);
+}
+.catalog-empty strong {
+  color: var(--text);
+}
+.catalog-settings {
+  padding: 0 16px 20px;
+}
+.catalog-settings p {
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+.catalog-root {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+.catalog-settings label {
+  display: block;
+  margin: 16px 0 8px;
+}
+.catalog-settings input,
+.catalog-settings textarea {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  margin-top: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+}
+.catalog-settings textarea {
+  min-height: 140px;
+}
+.catalog-settings > button + button {
+  margin-left: 8px;
+}
+.catalog-scan-errors summary {
+  cursor: pointer;
+}
+.catalog-scan-error-list {
+  max-height: 180px;
+  overflow: auto;
+}
+.catalog-scan-error {
+  overflow-wrap: anywhere;
+}
+.catalog-scan-error span {
+  display: block;
+  margin-top: 4px;
+}
+.catalog-home {
+  width: min(880px, calc(100% - 32px));
+  margin: 48px auto;
+}
+.catalog-inline {
+  position: static;
+  width: 100%;
+  max-height: none;
+  box-shadow: none;
+}
+.recovered-drafts {
+  padding: 12px 20px;
+  background: var(--warning-bg);
+  max-height: 200px;
+  overflow: auto;
+}
+.recovered-drafts textarea {
+  display: block;
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+@media (max-width: 767px) {
+  .catalog-panel:not(.catalog-inline) {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    border-radius: 0;
+  }
+  .catalog-home {
+    margin-top: 16px;
+  }
+  .catalog-footer > span {
+    flex-basis: 100%;
+  }
+}

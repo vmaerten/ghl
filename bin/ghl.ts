@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { execFile, spawn } from 'node:child_process'
+import { resolve } from 'node:path'
 import { lookup } from 'node:dns/promises'
 import { setTimeout as delay } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
@@ -28,6 +29,8 @@ const PROBE_TIMEOUT_MS = 300
 const STARTUP_TIMEOUT_MS = 5_000
 
 interface Options {
+  roots: string[]
+  browse: boolean
   open: boolean
   print: boolean
   json: boolean
@@ -62,6 +65,8 @@ Commands:
                  "comments" is still reachable as refs/heads/comments.
 
 Options:
+  --root <path>  Add a discovery root permanently (repeatable)
+  --browse       Open the local repository catalogue
   --json         With \`comments\`: machine-readable output instead of markdown
   --base <rev>   Compare against <rev> instead of the guessed base
   --port <n>     Listen on <n>, or on the next free port after it
@@ -94,6 +99,8 @@ function parseMinutes(value: string): number {
 
 function parseArgs(argv: string[], env: NodeJS.ProcessEnv): Options {
   const options: Options = {
+    roots: [],
+    browse: false,
     open: true,
     print: false,
     json: false,
@@ -114,6 +121,8 @@ function parseArgs(argv: string[], env: NodeJS.ProcessEnv): Options {
     const arg = argv[i] ?? ''
     if (!arg.startsWith('-') && options.target === null) options.target = arg
     else if (arg === '-h' || arg === '--help') options.help = true
+    else if (arg === '--root') options.roots.push(resolve(next(++i, '--root')))
+    else if (arg === '--browse') options.browse = true
     else if (arg === '--no-open') options.open = false
     else if (arg === '--print') options.print = true
     else if (arg === '--json') options.json = true
@@ -252,7 +261,7 @@ async function runDaemon(options: Options): Promise<void> {
 }
 
 /** Hand `entry` to the shared instance, starting or replacing it as needed. */
-async function serveViaDaemon(options: Options, entry: RepoEntry): Promise<string> {
+async function serveViaDaemon(options: Options, entry: RepoEntry | null): Promise<string | null> {
   const ours = runtimeRevision()
   let health = await probe(options.port)
   let inherited: string[] = []
@@ -272,9 +281,14 @@ async function serveViaDaemon(options: Options, entry: RepoEntry): Promise<strin
 
   // Handed over as bare paths, which is all an entry holds.
   for (const repoPath of inherited) {
-    if (repoPath !== entry.repoPath) await post(options.port, 'repos', { repoPath })
+    if (repoPath !== entry?.repoPath) await post(options.port, 'repos', { repoPath })
   }
 
+  for (const path of options.roots) {
+    const response = await post(options.port, 'roots', { path })
+    if (!response.ok) throw new Error((await response.json()).error)
+  }
+  if (!entry) return null
   const response = await post(options.port, 'repos', entry)
   if (!response.ok) {
     throw new Error(`the instance on port ${options.port} refused the repository`)
@@ -333,12 +347,26 @@ async function main() {
 
   // The only place where the current directory is read: everything downstream
   // takes repoPath as a parameter.
-  const repoPath = await resolveRepoRoot(process.cwd())
-  const base = await resolveBase(repoPath, { override: options.base, target: options.target })
+  const requiresRepo =
+    command === 'comments' || options.print || options.base !== null || options.target !== null
+  if (options.browse && requiresRepo)
+    throw new Error('--browse cannot be combined with comments, --print, a revision or --base')
+  if (options.roots.length && (command === 'comments' || options.print))
+    throw new Error('--root cannot be combined with comments or --print')
+  let repoPath: string | null = null
+  try {
+    repoPath = await resolveRepoRoot(process.cwd())
+  } catch (error) {
+    if (requiresRepo) throw error
+  }
+  if (options.browse) repoPath = null
+  const base = repoPath
+    ? await resolveBase(repoPath, { override: options.base, target: options.target })
+    : null
 
-  if (command === 'comments') return runComments(repoPath, base, options)
+  if (command === 'comments' && repoPath && base) return runComments(repoPath, base, options)
 
-  if (options.print) {
+  if (options.print && repoPath && base) {
     const { patch, untracked } = await buildPatch(repoPath, base.ref, { target: options.target })
     const { files, additions, deletions } = summarise(patch)
     const state = await repoState(repoPath)
@@ -375,16 +403,20 @@ async function main() {
     return
   }
 
-  const entry: RepoEntry = { repoPath }
+  const entry: RepoEntry | null = repoPath ? { repoPath } : null
 
   let port = options.port
-  let repoId = repoIdFor(repoPath)
+  let repoId = repoPath ? repoIdFor(repoPath) : null
 
   if (options.useDaemon) {
     repoId = await serveViaDaemon(options, entry)
   } else {
     // Foreground: this process is the server, and dies with the terminal.
-    port = await listenNear(createGhlServer({ repos: [entry] }), options.port)
+    port = await listenNear(createGhlServer({ repos: entry ? [entry] : [] }), options.port)
+    for (const path of options.roots) {
+      const response = await post(port, 'roots', { path })
+      if (!response.ok) throw new Error((await response.json()).error)
+    }
   }
 
   // What was asked for on the command line travels in the address, not in the
@@ -396,8 +428,10 @@ async function main() {
   if (options.target) opening.set('target', options.target)
   const query = opening.size > 0 ? `?${opening}` : ''
 
-  const url = `http://${await displayHost()}:${port}/r/${repoId}${query}`
-  process.stdout.write(`ghl serving ${repoPath}\n  base ${base.ref} (${base.source})\n  ${url}\n`)
+  const url = `http://${await displayHost()}:${port}${repoId ? `/r/${repoId}${query}` : '/'}`
+  process.stdout.write(
+    `ghl serving ${repoPath ?? 'local repositories'}\n${base ? `  base ${base.ref} (${base.source})\n` : ''}  ${url}\n`,
+  )
   if (options.open) openBrowser(url)
 }
 

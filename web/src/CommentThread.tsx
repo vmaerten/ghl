@@ -31,6 +31,7 @@ interface Props {
    * unmounts this card — a draft kept in its own state would be lost to a scroll.
    */
   drafts: RefObject<Map<string, string>>
+  onDraft: (body: string) => void
   onSubmit: (body: string) => void
   onCancel: () => void
   onEdit: (comment: Comment) => void
@@ -46,6 +47,7 @@ export default function CommentThread({
   currentRange,
   saving,
   drafts,
+  onDraft,
   onSubmit,
   onCancel,
   onEdit,
@@ -94,7 +96,10 @@ export default function CommentThread({
               defaultValue={drafts.current?.get(draftKey) ?? ''}
               // Into the ref, not into state: a keystroke must not re-render the
               // application, and the pane re-measures items only on its own passes.
-              onChange={(event) => drafts.current?.set(draftKey, event.target.value)}
+              onChange={(event) => {
+                drafts.current?.set(draftKey, event.target.value)
+                onDraft(event.target.value)
+              }}
               onKeyDown={(event) => {
                 if (event.key === 'Escape') {
                   // The global handler treats Escape as nothing, but the picker
