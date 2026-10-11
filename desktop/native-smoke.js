@@ -58,6 +58,7 @@
         mountedReviews: document.querySelectorAll('.app').length,
         name,
         pid: health.pid,
+        build: { version: health.version, commit: health.commit, buildDate: health.buildDate },
         repos: health.repos.length,
         minimized,
         path: location.pathname,

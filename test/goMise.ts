@@ -202,6 +202,7 @@ try {
     mirror = await miseReleaseFixture(
       temporary,
       join(dist, `ghl_${metadata.version}_darwin_arm64.tar.gz`),
+      join(dist, `ghl-desktop_${metadata.version}_darwin_arm64.zip`),
     )
     env.MISE_URL_REPLACEMENTS = JSON.stringify({
       'https://api.github.com/': `${mirror.origin}/`,
@@ -403,6 +404,8 @@ try {
     await preserved()
     assert.ok(mirror.requested.some((path) => path.endsWith('/checksums.txt')))
     assert.ok(mirror.requested.some((path) => path.endsWith('_darwin_arm64.tar.gz')))
+    assert.ok(!mirror.requested.some((path) => path.endsWith('.zip')))
+    record('CLI archive selected alongside desktop ZIP')
     const remote = await mise('ls-remote', tool)
     assert.ok(remote.includes('1.0.1'))
     assert.ok(!remote.includes('rc.1'), 'latest must exclude prereleases by default')

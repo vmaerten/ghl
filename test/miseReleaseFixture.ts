@@ -22,10 +22,15 @@ export interface Release {
 export const sha256 = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex')
 
 /** Real mise client/backend, local release API; no tags or releases are created. */
-export async function miseReleaseFixture(directory: string, archive: string) {
+export async function miseReleaseFixture(
+  directory: string,
+  archive: string,
+  desktopArchive: string,
+) {
   const extracted = join(directory, 'candidate')
   mkdirSync(extracted)
   execFileSync('tar', ['-xzf', archive, '-C', extracted])
+  const desktopBytes = readFileSync(desktopArchive)
   const assets = new Map<string, Buffer>()
   const releases: Release[] = []
   const requested: string[] = []
@@ -50,6 +55,7 @@ export async function miseReleaseFixture(directory: string, archive: string) {
       'THIRD_PARTY_NOTICES.txt',
     ])
     const bytes = readFileSync(output)
+    const desktopName = `ghl-desktop_${version}_darwin_arm64.zip`
     const digest = corrupt ? '0'.repeat(64) : sha256(bytes)
     const release: Release = {
       tag_name: `v${version}`,
@@ -59,8 +65,12 @@ export async function miseReleaseFixture(directory: string, archive: string) {
       assets: [],
     }
     for (const [filename, payload] of [
+      [desktopName, desktopBytes],
       [name, bytes],
-      ['checksums.txt', Buffer.from(`${digest}  ${name}\n`)],
+      [
+        'checksums.txt',
+        Buffer.from(`${sha256(desktopBytes)}  ${desktopName}\n${digest}  ${name}\n`),
+      ],
     ] as const) {
       const download = `/vmaerten/ghl/releases/download/v${version}/${filename}`
       const api = `/repos/vmaerten/ghl/releases/assets/${assets.size + 1}`

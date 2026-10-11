@@ -58,6 +58,7 @@ def wait(server, phase, start=0):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--standalone', action='store_true')
+    parser.add_argument('--bundle', type=Path, help='Test an extracted release bundle')
     args = parser.parse_args()
     server = ThreadingHTTPServer(('127.0.0.1', 0), Collector)
     server.events = []
@@ -71,10 +72,11 @@ def main():
         script = folder / 'probe.js'
         script.write_text(f'window.smokeCollector = "http://127.0.0.1:{server.server_port}/";\n' + Path(__file__).with_name('native-smoke.js').read_text())
         env = {**os.environ, 'GHL_DESKTOP_PROBE': str(script)}
-        binary = BINARY
+        source_binary = (args.bundle.resolve() / 'Contents/MacOS/ghl-desktop') if args.bundle else BINARY
+        binary = source_binary
         if args.standalone:
             bundle = folder / 'ghl Desktop.app'
-            shutil.copytree(BINARY.parents[2], bundle)
+            shutil.copytree(source_binary.parents[2], bundle)
             binary = bundle / 'Contents/MacOS/ghl-desktop'
             env['PATH'] = '/usr/bin:/bin:/usr/sbin:/sbin'
             assert all(shutil.which(tool, path=env['PATH']) is None for tool in ['node', 'pnpm', 'go'])
