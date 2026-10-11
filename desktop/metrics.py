@@ -1,4 +1,4 @@
-"""macOS-only PoC: include launchd-hosted WebKit tasks attributed to the app.
+"""macOS footprint sampler: include launchd-hosted WebKit tasks attributed to the app.
 
 RSS is descriptive; physical footprint is the primary memory measure. The
 read-only responsibility lookup is an undocumented macOS API, checked at run

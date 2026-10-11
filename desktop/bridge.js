@@ -1,4 +1,4 @@
-// Only injected inside the prototype's Wails document. Browser UI is unchanged.
+// Only injected inside the desktop app's Wails document. Browser UI is unchanged.
 ;(() => {
   if (!window.runtime?.ClipboardSetText) throw new Error('Desktop runtime is missing')
   Object.defineProperty(navigator, 'clipboard', {

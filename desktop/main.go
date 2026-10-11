@@ -1,4 +1,4 @@
-// Usable desktop prototype. The production Go module stays dependency-free.
+// Desktop application. The production Go module stays dependency-free.
 package main
 
 import (
@@ -68,7 +68,7 @@ func run() error {
 		}
 		bundle := filepath.Dir(filepath.Dir(filepath.Dir(executable)))
 		if filepath.Ext(bundle) != ".app" {
-			return fmt.Errorf("run the prototype from its .app bundle (task wails:run)")
+			return fmt.Errorf("run the desktop app from its .app bundle (task desktop:run)")
 		}
 		// LaunchServices gives the window a Dock identity and lets the terminal
 		// return. -n delivers later requests through Wails' single-instance callback.
@@ -98,7 +98,7 @@ func run() error {
 		if err != nil {
 			return err
 		}
-		// Fixture windows must never join the user's running prototype.
+		// Fixture windows must never join the user's running desktop app.
 		instanceID = fmt.Sprintf("ghl-test-%x", sha256.Sum256([]byte(path)))
 	}
 	desktop := &desktopApp{backend: backend, requests: make(chan launch, 16)}
@@ -113,7 +113,7 @@ func run() error {
 		runtime.WindowExecJS(desktop.runtimeContext(), "window.dispatchEvent(new Event('desktop:close-active'))")
 	})
 	return wails.Run(&options.App{
-		Title: "ghl — desktop prototype", Width: 1280, Height: 800, MinWidth: 800, MinHeight: 500,
+		Title: "ghl — Desktop", Width: 1280, Height: 800, MinWidth: 800, MinHeight: 500,
 		Menu: appMenu, EnableDefaultContextMenu: true,
 		BackgroundColour: options.NewRGBA(34, 39, 46, 255),
 		AssetServer:      &assetserver.Options{Handler: backend.handler()},

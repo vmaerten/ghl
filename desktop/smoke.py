@@ -11,8 +11,8 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-ROOT = Path(__file__).resolve().parent.parent.parent
-BINARY = ROOT / '.task/wails/ghl Prototype.app/Contents/MacOS/ghl-desktop'
+ROOT = Path(__file__).resolve().parent.parent
+BINARY = ROOT / '.task/desktop/ghl Desktop.app/Contents/MacOS/ghl-desktop'
 
 
 def fixture(path, context):
@@ -73,12 +73,12 @@ def main():
         env = {**os.environ, 'GHL_DESKTOP_PROBE': str(script)}
         binary = BINARY
         if args.standalone:
-            bundle = folder / 'ghl Prototype.app'
+            bundle = folder / 'ghl Desktop.app'
             shutil.copytree(BINARY.parents[2], bundle)
             binary = bundle / 'Contents/MacOS/ghl-desktop'
             env['PATH'] = '/usr/bin:/bin:/usr/sbin:/sbin'
             assert all(shutil.which(tool, path=env['PATH']) is None for tool in ['node', 'pnpm', 'go'])
-        log_path = ROOT / '.task/wails/smoke.log'
+        log_path = ROOT / '.task/desktop/smoke.log'
         with log_path.open('w') as log:
             try:
                 app = subprocess.Popen([str(binary), '--desktop-window', '--repo', str(first), '--base', 'HEAD'], env=env, stdout=log, stderr=log)
@@ -117,8 +117,8 @@ def main():
                 app.wait(timeout=15)
                 assert app.returncode == 0
                 report = {'complete': True, 'standalone': args.standalone, 'checks': ['native rendering', 'context expansion', 'UI comment create/edit/delete', 'OS Markdown clipboard', 'Viewed', 'relative Unicode path from second caller', 'same process/window reuse', 'unminimise', 'switch back', 'shutdown', 'restart persistence', 'CLI tab deduplication', 'UI close tab', 'one mounted review', 'close last tab keeps window', 'inline context draft restoration', 'scroll restoration', 'lightweight view captures', 'panel draft restoration', 'Ctrl+Tab', 'reload preserves drafts'], 'events': server.events}
-                (ROOT / '.task/wails/validation.json').write_text(json.dumps(report, indent=2))
-                print(json.dumps({'complete': True, 'checks': report['checks'], 'report': '.task/wails/validation.json'}))
+                (ROOT / '.task/desktop/validation.json').write_text(json.dumps(report, indent=2))
+                print(json.dumps({'complete': True, 'checks': report['checks'], 'report': '.task/desktop/validation.json'}))
             finally:
                 if app and app.poll() is None:
                     app.terminate()

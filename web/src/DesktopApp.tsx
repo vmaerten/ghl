@@ -91,9 +91,7 @@ export default function DesktopApp() {
                 expansions: [],
               },
         )
-      runtime.WindowSetTitle(
-        active ? `ghl — ${active.name} (prototype)` : 'ghl — desktop prototype',
-      )
+      runtime.WindowSetTitle(active ? `ghl — ${active.name}` : 'ghl — Desktop')
       // Update the URL before mounting App; its selection is seeded at mount.
       if (previous.active !== next.active) history.replaceState(null, '', active?.route ?? '/')
       setState(next)
