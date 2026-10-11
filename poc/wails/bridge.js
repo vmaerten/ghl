@@ -11,4 +11,9 @@
       readText: () => window.runtime.ClipboardGetText(),
     },
   })
+  const replace = history.replaceState.bind(history)
+  history.replaceState = (...args) => {
+    replace(...args)
+    window.dispatchEvent(new Event('desktop:selection'))
+  }
 })()

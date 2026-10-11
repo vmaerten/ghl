@@ -2,7 +2,7 @@
 
 This prototype answers a daily-use question: can `ghl` keep one dedicated review
 window while preserving the existing Go backend and React interface? It lives
-on `poc/wails-desktop`, separately from the desktop-envelope benchmark and the
+on the `poc/wails-desktop` → `poc/wails-tabs` review chain, separately from the desktop-envelope benchmark and the
 default browser CLI. It currently targets macOS on Apple Silicon.
 
 ## Run
@@ -17,9 +17,20 @@ task wails:run -- --repo /path/to/another/repository --base main
 
 The task builds an embedded React release and a locally signed application in
 `.task/wails/ghl Prototype.app`. The terminal returns after opening the window.
-Later launches switch the existing window to the requested repository/selection
-and bring it back from a minimised state. Repeating the same selection focuses
-the window without reloading its draft or scrolling position.
+Later launches open or activate a review tab in the same window and bring it
+back from a minimised state. A tab identifies a canonical checkout and its base/
+target parameters; repeated commands activate an existing matching tab. Commit,
+Working tree and Untracked selections belong to that tab's view and survive
+switching. Repeating the active comparison does not reload its page.
+
+The tab strip supplies selection, per-tab close buttons and **+** to open a
+repository. Arrow keys, Home and End navigate the focused tab strip. `Cmd+W`
+closes the active tab; closing the last tab leaves the welcome screen open.
+Only the active React review is mounted. Inactive tabs retain their route and
+label, not their parsed patch, DOM or a hidden review component. Full restoration
+of draft text and scroll across switches is the next stack layer; use saved
+comments/Viewed for durable review data in this layer. Tab lists are not restored
+after restarting the application.
 
 For daily use, install a separate command:
 
@@ -38,7 +49,7 @@ installation remains the browser version. `task wails:uninstall` removes only
 the prototype symlink.
 
 The application menu supplies **File → Open repository** (`Cmd+O`), native Edit
-commands, reload (`Cmd+R`) and quit (`Cmd+Q`). Closing the window quits the app.
+commands, close tab (`Cmd+W`), reload (`Cmd+R`) and quit (`Cmd+Q`). Closing the window quits the app.
 Git and macOS system WebKit are the runtime requirements; consumers of a copied
 bundle need no Node, pnpm, Task or Go. No Caddy, DNS or proxy setup is required.
 
@@ -67,7 +78,10 @@ document origin. The public runtime Host/Origin checks remain intact.
 Wails v2 notifications contain arguments without the executable and report the
 executable directory, rather than the terminal directory. The launcher resolves
 relative paths and canonicalizes arguments before handing them to Wails. Review
-URLs end in `/` so Wails injects its native runtime after every page navigation.
+URLs end in `/` so Wails injects its native runtime after a page reload. Tab
+navigation changes history and remounts the active review within the same native
+document. A late remembered-base write from an unmounted review cannot replace
+the next tab's URL. Revision numbers on native tab snapshots reject old replies.
 
 ## Validation and limitations
 
@@ -80,17 +94,21 @@ python3 poc/wails/smoke.py --standalone
 
 Race tests exercise argument handling, caller-directory preservation, invalid
 repos/refs, the shared in-process backend, comment persistence, shutdown and
-the native/public origin boundary. The smoke test opens the real WebKit window
+the native/public origin boundary, tab identity/closing, stale route updates and
+concurrent opens. The smoke test opens the real WebKit window
 on two temporary repositories. It exercises context expansion, UI comment
 creation/edit/deletion, Markdown copy checked against the OS clipboard, Viewed,
 relative Unicode paths from another caller, reuse of the same process/window,
-unminimising, switching back, shutdown and state restoration after restarting.
+unminimising, CLI deduplication, UI tab closing, one mounted review, the empty
+welcome screen, shutdown and state restoration after restarting.
 It writes `.task/wails/validation.json` and `.task/wails/smoke.log`.
 The standalone mode copies the complete bundle outside the checkout and reruns
 the same native checks with only the system tools/Git in PATH.
 
 The optional `GHL_DESKTOP_PROBE` path is a local acceptance-test script injected
-into the native document; it is unused in normal launches. Tests do not open
+into the native document; it is unused in normal launches. Its unique path also
+isolates the test's instance lock, so fixture opens cannot join a user's running
+prototype. Tests do not open
 your personal Chrome or mutate a real repository. The clipboard check writes
 fixture Markdown to the system clipboard.
 

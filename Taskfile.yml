@@ -10,7 +10,7 @@ tasks:
       - sh: '[ "{{OS}}" = darwin ]'
         msg: This desktop prototype currently targets macOS
     cmds:
-      - pnpm exec vite build --mode go --outDir ../poc/wails/assets
+      - pnpm exec vite build --mode go-desktop --outDir ../poc/wails/assets
       - touch poc/wails/assets/.gitkeep
       - mkdir -p '.task/wails/ghl Prototype.app/Contents/MacOS'
       - >-

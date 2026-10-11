@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"embed"
 	"errors"
 	"flag"
@@ -71,7 +72,12 @@ func run() error {
 		}
 		// LaunchServices gives the window a Dock identity and lets the terminal
 		// return. -n delivers later requests through Wails' single-instance callback.
-		return exec.Command("/usr/bin/open", append([]string{"-n", "-a", bundle, "--args", "--desktop-window"}, os.Args[1:]...)...).Run()
+		openArgs := []string{"-n", "-a", bundle}
+		if probe := os.Getenv("GHL_DESKTOP_PROBE"); probe != "" {
+			openArgs = append(openArgs, "--env", "GHL_DESKTOP_PROBE="+probe)
+		}
+		openArgs = append(openArgs, "--args", "--desktop-window")
+		return exec.Command("/usr/bin/open", append(openArgs, os.Args[1:]...)...).Run()
 	}
 	assets, err := fs.Sub(embedded, "assets")
 	if err != nil {
@@ -86,11 +92,14 @@ func run() error {
 	defer backend.close()
 	// Local acceptance tests may supply a probe; no test script runs by default.
 	var probe []byte
+	instanceID := "cf7c8359-dbb0-4c1c-a09f-301b26d2a917"
 	if path := os.Getenv("GHL_DESKTOP_PROBE"); path != "" {
 		probe, err = os.ReadFile(path)
 		if err != nil {
 			return err
 		}
+		// Fixture windows must never join the user's running prototype.
+		instanceID = fmt.Sprintf("ghl-test-%x", sha256.Sum256([]byte(path)))
 	}
 	desktop := &desktopApp{backend: backend, requests: make(chan launch, 16)}
 	desktop.requests <- initial
@@ -98,11 +107,13 @@ func run() error {
 	fileMenu := appMenu.AddSubmenu("File")
 	fileMenu.AddText("Open repository…", keys.CmdOrCtrl("o"), func(*menu.CallbackData) { desktop.chooseRepository() })
 	fileMenu.AddText("Refresh", keys.CmdOrCtrl("r"), func(*menu.CallbackData) { runtime.WindowReload(desktop.runtimeContext()) })
+	fileMenu.AddText("Close tab", keys.CmdOrCtrl("w"), func(*menu.CallbackData) { desktop.CloseTab(desktop.Tabs().Active) })
 	return wails.Run(&options.App{
 		Title: "ghl — desktop prototype", Width: 1280, Height: 800, MinWidth: 800, MinHeight: 500,
 		Menu: appMenu, EnableDefaultContextMenu: true,
 		BackgroundColour: options.NewRGBA(34, 39, 46, 255),
 		AssetServer:      &assetserver.Options{Handler: backend.handler()},
+		Bind:             []interface{}{desktop},
 		OnStartup: func(windowCtx context.Context) {
 			desktop.startup(windowCtx)
 			go func() {
@@ -122,7 +133,7 @@ func run() error {
 		},
 		OnShutdown: func(context.Context) { backend.close() },
 		SingleInstanceLock: &options.SingleInstanceLock{
-			UniqueId:               "cf7c8359-dbb0-4c1c-a09f-301b26d2a917",
+			UniqueId:               instanceID,
 			OnSecondInstanceLaunch: desktop.secondLaunch,
 		},
 	})

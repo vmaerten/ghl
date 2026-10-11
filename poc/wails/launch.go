@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"path/filepath"
@@ -19,9 +18,9 @@ const help = `ghl-desktop — usable Wails prototype (macOS)
 Usage: ghl-desktop [target] [--repo <path>] [--base <ref>]
 
 Defaults to the current checkout. Returns to the terminal after opening.
-Launching it again reuses the same window.
+Launching it again opens or activates a review tab in the same window.
 Relative paths are resolved from the calling terminal, including later launches.
-Cmd+O opens another repository; Cmd+R reloads; Cmd+Q quits and stops the server.
+Cmd+O opens another repository; Cmd+W closes a tab; Cmd+R reloads; Cmd+Q quits.
 Uses the same .git/ghl/state.json as the browser CLI.
 This prototype is separate from the installed ghl command. No Caddy is needed.
 `
@@ -97,6 +96,7 @@ type desktopApp struct {
 	backend  *reviewBackend
 	requests chan launch
 	ready    sync.Once
+	tabs     reviewTabs
 }
 
 func (d *desktopApp) startup(ctx context.Context) {
@@ -139,15 +139,18 @@ func (d *desktopApp) process(ctx context.Context) {
 				d.showError(err)
 				continue
 			}
-			encoded, _ := json.Marshal(route)
-			runtime.WindowSetTitle(ctx, "ghl — "+filepath.Base(request.repo)+" (prototype)")
-			// A trailing slash keeps Wails' runtime injection on every review page.
-			// Repeating the same selection only focuses the window, preserving drafts.
-			runtime.WindowExecJS(ctx, "if (location.pathname + location.search !== "+string(encoded)+") location.replace("+string(encoded)+")")
+			d.publish(d.tabs.open(route))
 			runtime.WindowUnminimise(ctx)
 			runtime.Show(ctx)
 		}
 	}
+}
+
+func (d *desktopApp) publish(state tabSnapshot) tabSnapshot {
+	if ctx := d.runtimeContext(); ctx != nil {
+		runtime.EventsEmit(ctx, "desktop:tabs", state)
+	}
+	return state
 }
 
 func (d *desktopApp) chooseRepository() {
