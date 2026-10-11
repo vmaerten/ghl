@@ -77,28 +77,62 @@ Replace the example with the checked-out tag. The command checks that it matches
 `package.json` and points at HEAD. GoReleaser's non-snapshot mode requires a
 clean checkout. Both local tasks leave publication disabled in the configuration.
 
-GitHub Actions is disabled for this repository and there is no CI workflow.
-Pull requests, branch pushes and tags do not start hosted jobs. Build, acceptance
-and publication run locally on the supported native macOS ARM64 target.
+The `Release` GitHub workflow runs only when a stable `vX.Y.Z` tag is pushed.
+It has no branch, pull-request or manual-dispatch trigger. A single `macos-26`
+ARM64 job checks out the event commit with all tags, installs the locked tools
+through mise 2026.10.2 and invokes `task release`. Actions are pinned by commit;
+only the release job receives `contents: write`. Its timeout is 20 minutes and
+reruns of the same tag cannot cancel an ongoing release. The older workflow
+remains disabled. On this private repository, the hosted job consumes the
+account's included minutes and may incur charges beyond that allowance.
 
-After building the checked-out version tag, run the complete
-[local acceptance gate](./go-validation.md), including the extracted archive,
-mise fixture and runtime measurements. Publish those exact tested files without
-rebuilding:
+`task release` resolves `RELEASE_TAG` from the workflow, an explicit `TAG`, or
+the exact tag on HEAD. It first runs the existing checked-tag build and complete
+archive verification. It then checks the version/commit/tag and checksums again,
+creates a draft with the two archives and checksum file, and publishes that
+draft only after uploads succeed. An existing release is not overwritten; a
+failed upload leaves a draft for inspection. GoReleaser's own publishing remains
+disabled. There is no paid signing or notarisation service.
+
+Test publication ordering and failures without GitHub writes:
 
 ```bash
+task test:release
+```
+
+Before pushing a release tag, run the relevant
+[local acceptance checks](./go-validation.md), including the extracted archive,
+mise fixture and runtime measurements. Commit the intended `package.json`
+version and release notes, then create and push its tag:
+
+```bash
+git tag v0.1.0
 git push origin refs/tags/v0.1.0
-gh release create v0.1.0 --verify-tag --title v0.1.0 --notes-file CHANGELOG.md \
-  go/dist/release/ghl_0.1.0_darwin_arm64.tar.gz \
-  go/dist/release/ghl-desktop_0.1.0_darwin_arm64.zip go/dist/release/checksums.txt
+```
+
+The workflow builds and publishes that tag's exact commit. It does not create
+or push tags. Replace the example with the release version. The automatic
+trigger accepts stable tags only; prereleases are available through the local
+Task path, which marks them as prereleases.
+
+As an alternative to the hosted workflow, from a clean checkout whose tag
+already exists on GitHub, an authenticated maintainer can run:
+
+```bash
+task release TAG=v0.1.0
+```
+
+Do not run the local publisher concurrently with the tag workflow. For a build
+without publication, retain `RELEASE_TAG=v0.1.0 task release:build` or
+`task release:snapshot`. To verify the published CLI installation afterward:
+
+```bash
 task release:mise:published VERSION=0.1.0
 ```
 
-Replace the version in every command when preparing another release. Add
-`--prerelease` for a prerelease tag. An existing release fails rather than
-replacing its files. The authenticated GitHub CLI needs permission to create
-releases; GoReleaser never publishes directly. GitHub Releases and mise remain
-the consumer distribution channels.
+GitHub Releases and mise remain the consumer distribution channels. The hosted
+workflow itself still needs its first real release-tag run; local validation
+does not establish that the runner's native UI environment works identically.
 
 The desktop ZIP can be downloaded and extracted manually; move `ghl Desktop.app`
 to `/Applications` and launch it there. It has ad hoc signing only, with no paid

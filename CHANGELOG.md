@@ -12,6 +12,11 @@ is macOS Apple Silicon (ARM64), distributed through GitHub Releases and mise.
   selection, stacks, themes, search, shortcuts and comment exports.
 - Reuse a shared local daemon and stable `ghl.localhost:7777` repository URLs;
   newer Go executables replace it while preserving registered repositories.
+- Add `ghl-desktop`, a Wails application with review tabs and restoration of
+  drafts, selection and scroll between tabs; share saved comments and Viewed
+  with the browser CLI. Distribute an ad hoc signed macOS app ZIP alongside it.
+- Build, verify and publish both archives through `task release`, automatically
+  invoked by GitHub Actions only for stable release tags.
 - Use native Task, Air and Vite for build, installation and hot reload.
 - Keep Node as the explicit `ghl-node` fallback during the 0.1.x transition.
 - Fix search input replacement during delayed opening frames and skip nested

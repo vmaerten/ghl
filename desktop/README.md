@@ -70,7 +70,8 @@ Extract the ZIP and move `ghl Desktop.app` to `/Applications`. The archive has
 free ad hoc signing, with no Apple notarisation. macOS may require a first-launch
 exception after download. No automatic quarantine removal or desktop mise
 installer is included in this layer. See the [release guide](../docs/go-releases.md)
-for local verification and manual publication. Nothing is published by the build.
+for local verification and the tag-only release workflow. `task release:snapshot`
+and `task desktop:build` do not publish; `task release` publishes verified archives.
 
 ## What is preserved
 
@@ -163,7 +164,8 @@ path. Wait for the first window before sending another review. This is tracked
 as a non-blocking follow-up in [#136](https://github.com/vmaerten/ghl/issues/136).
 
 Builds are manual/local with ad hoc signing. Release signing, notarisation and
-automatic updates are not configured; there is no CI or publication. Native hot
+automatic updates are not configured. Stable release tags run a hosted macOS
+job through `task release`; PRs and branch pushes do not run CI. Native hot
 reload is not configured;
 the existing `task dev` remains available for browser development. Quit the
 desktop app before rebuilding to load new embedded UI/server code. The envelope
