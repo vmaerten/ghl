@@ -72,3 +72,31 @@ func TestConcurrentTabOpenDoesNotDuplicate(t *testing.T) {
 		t.Fatal("concurrent launch duplicated tabs")
 	}
 }
+
+func TestVolatileViewCapturesAreIsolatedAndNotResurrected(t *testing.T) {
+	var tabs reviewTabs
+	state := tabs.open("/r/first-1234567/")
+	id := state.Active
+	view := `{"version":1,"drafts":[["line","unsaved text"]],"scrollTop":350}`
+	if err := tabs.saveView(id, view); err != nil {
+		t.Fatal(err)
+	}
+	tabs.open("/r/second-1234567/")
+	state = tabs.activate(id)
+	if string(state.Tabs[0].View) != view {
+		t.Fatal("draft was lost")
+	}
+	state.Tabs[0].View[0] = 'x'
+	if string(tabs.snapshot().Tabs[0].View) != view {
+		t.Fatal("capture aliases live view")
+	}
+	for _, invalid := range []string{"{}", `{"version":2}`, `"string"`, "{"} {
+		if tabs.saveView(id, invalid) == nil {
+			t.Fatal("accepted invalid view")
+		}
+	}
+	tabs.close(id)
+	if err := tabs.saveView(id, view); err != nil || len(tabs.snapshot().Tabs) != 1 {
+		t.Fatal("closed tab resurrected")
+	}
+}

@@ -97,7 +97,11 @@ def main():
                 duplicate = wait(server, 'same-tab', checkpoint)
                 assert duplicate['tabs'] == 2 and duplicate['mountedReviews'] == 1
                 restored = wait(server, 'restored', checkpoint)
-                assert restored['pid'] == app.pid and restored['repos'] == 2 and restored['tabs'] == 1
+                assert restored['pid'] == app.pid and restored['repos'] == 2 and restored['tabs'] == 1 and restored['draft']
+                checkpoint = len(server.events)
+                subprocess.run([str(binary), '--repo', str(second), '--base', 'HEAD'], env=env, stdout=log, stderr=log, check=True, timeout=10)
+                wait(server, 'restored-editor', checkpoint)
+                wait(server, 'reloaded-editor', checkpoint)
                 app.send_signal(signal.SIGTERM)
                 app.wait(timeout=15)
                 assert app.returncode == 0
@@ -112,7 +116,7 @@ def main():
                 app.send_signal(signal.SIGTERM)
                 app.wait(timeout=15)
                 assert app.returncode == 0
-                report = {'complete': True, 'standalone': args.standalone, 'checks': ['native rendering', 'context expansion', 'UI comment create/edit/delete', 'OS Markdown clipboard', 'Viewed', 'relative Unicode path from second caller', 'same process/window reuse', 'unminimise', 'switch back', 'shutdown', 'restart persistence', 'CLI tab deduplication', 'UI close tab', 'one mounted review', 'close last tab keeps window'], 'events': server.events}
+                report = {'complete': True, 'standalone': args.standalone, 'checks': ['native rendering', 'context expansion', 'UI comment create/edit/delete', 'OS Markdown clipboard', 'Viewed', 'relative Unicode path from second caller', 'same process/window reuse', 'unminimise', 'switch back', 'shutdown', 'restart persistence', 'CLI tab deduplication', 'UI close tab', 'one mounted review', 'close last tab keeps window', 'inline context draft restoration', 'scroll restoration', 'lightweight view captures', 'panel draft restoration', 'Ctrl+Tab', 'reload preserves drafts'], 'events': server.events}
                 (ROOT / '.task/wails/validation.json').write_text(json.dumps(report, indent=2))
                 print(json.dumps({'complete': True, 'checks': report['checks'], 'report': '.task/wails/validation.json'}))
             finally:

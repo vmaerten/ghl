@@ -66,19 +66,81 @@
       if (name === 'second é space') {
         check(data.files[0].path === 'other.txt', 'Second repository not selected')
         await report({ ...baseReport, phase: 'second' })
+        if (window.smokeSecondAgain)
+          window.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'Tab', ctrlKey: true, bubbles: true }),
+          )
+        window.smokeSecondAgain = true
         return
       }
       if (data.comments.some((c) => c.body === 'persistent desktop fixture')) {
         check('context.txt' in data.viewed, 'Viewed did not persist')
-        document.querySelector('.comments-trigger').click()
+        if (health.repos.length > 1) {
+          await wait(
+            () =>
+              document.querySelector('.comment-composer textarea')?.value ===
+              'draft survives desktop tabs',
+            'Inline draft not restored',
+          )
+          await sleep(700)
+          const pane = [...document.querySelector('.diff').querySelectorAll('*')].find(
+            (el) =>
+              ['auto', 'scroll'].includes(getComputedStyle(el).overflowY) &&
+              el.scrollHeight > el.clientHeight,
+          )
+          check(
+            pane && Math.abs(pane.scrollTop - expected.view.scrollTop) < 8,
+            'Scroll not restored: ' + pane?.scrollTop + ' expected ' + expected.view.scrollTop,
+          )
+          check(
+            document.querySelector('.comment-composer .comment-lines').textContent.includes('20'),
+            'Context anchor not restored',
+          )
+        }
+        if (!document.querySelector('.comments-panel[open]'))
+          document.querySelector('.comments-trigger').click()
         await wait(() => document.querySelector('.comments-panel[open]'), 'Panel did not open')
         check(
           document
             .querySelector('.comments-panel')
-            .textContent.includes('persistent desktop fixture'),
+            .textContent.includes('persistent desktop fixture') ||
+            document.querySelector('.panel-editor textarea')?.value === 'panel draft survives',
           'Comment not restored in UI',
         )
-        await report({ ...baseReport, phase: 'restored', viewed: true, comment: true })
+        if (health.repos.length > 1 && expected.view?.panelEditor?.editing) {
+          await wait(
+            () =>
+              document.querySelector('.panel-editor textarea')?.value === 'panel draft survives',
+            'Panel draft not restored',
+          )
+          const flag = 'ghl-smoke-reload:' + api
+          if (!sessionStorage.getItem(flag)) {
+            sessionStorage.setItem(flag, '1')
+            await report({ ...baseReport, phase: 'restored-editor', panelDraft: true })
+            window.dispatchEvent(new Event('desktop:reload'))
+            return
+          }
+          sessionStorage.removeItem(flag)
+          await report({ ...baseReport, phase: 'reloaded-editor', panelDraft: true })
+          return
+        }
+        if (health.repos.length > 1) {
+          document.querySelector('.comments-panel .comment-menu-items button').click()
+          await wait(
+            () => document.querySelector('.panel-editor textarea'),
+            'Panel editor unavailable',
+          )
+          text('.panel-editor textarea', 'panel draft survives')
+          await sleep(100)
+        }
+        await report({
+          ...baseReport,
+          phase: 'restored',
+          viewed: true,
+          comment: true,
+          draft: health.repos.length > 1,
+          viewBytes: JSON.stringify(expected.view ?? {}).length,
+        })
         if (health.repos.length === 1) document.querySelector('.desktop-tab-close').click()
         return
       }
@@ -164,8 +226,34 @@
         }),
       })
       check(response.ok, 'Persistence fixture did not save')
+      // Leave a draft on expanded context, not on a changed line.
+      const draftCell = host().shadowRoot.querySelector('[data-column-number="20"]')
+      const draftBounds = draftCell.getBoundingClientRect()
+      const draftEvents = {
+        ...eventOptions,
+        clientX: draftBounds.x + 4,
+        clientY: draftBounds.y + draftBounds.height / 2,
+      }
+      draftCell.dispatchEvent(new PointerEvent('pointerdown', { ...draftEvents, buttons: 1 }))
+      draftCell.dispatchEvent(new PointerEvent('pointerup', draftEvents))
+      document.activeElement?.blur()
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true }))
+      await wait(
+        () => document.querySelector('.comment-composer textarea'),
+        'Draft composer not opened',
+      )
+      text('.comment-composer textarea', 'draft survives desktop tabs')
+      await sleep(100)
       document.querySelector('.viewed-toggle input').click()
       await wait(async () => 'context.txt' in (await diff()).viewed, 'Viewed not saved')
+      const scrollPane = [...document.querySelector('.diff').querySelectorAll('*')].find(
+        (el) =>
+          ['auto', 'scroll'].includes(getComputedStyle(el).overflowY) &&
+          el.scrollHeight > el.clientHeight,
+      )
+      check(scrollPane, 'No scroll pane for session')
+      scrollPane.scrollTop = 260
+      await sleep(500)
       check(contextRequests > 0, 'Context did not use the API')
       await report({
         ...baseReport,

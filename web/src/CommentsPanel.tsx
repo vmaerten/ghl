@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import type { ServedComment } from '../../src/types.ts'
 import type { SaveState } from './commentPersistence.ts'
 import CommentCard, { lineLabel } from './CommentCard.tsx'
 import Icon from './Icon.tsx'
 
 export default function CommentsPanel({
+  session,
   open,
   comments,
   currentRange,
@@ -19,6 +20,7 @@ export default function CommentsPanel({
   onDelete,
   onRetry,
 }: {
+  session?: RefObject<{ editing: string | null; draft: string }>
   open: boolean
   comments: ServedComment[]
   currentRange: string
@@ -34,8 +36,11 @@ export default function CommentsPanel({
   onRetry: (comment: ServedComment) => void
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
-  const [editing, setEditing] = useState<string | null>(null)
-  const [draft, setDraft] = useState('')
+  const [editing, setEditing] = useState<string | null>(session?.current.editing ?? null)
+  const [draft, setDraft] = useState(session?.current.draft ?? '')
+  useEffect(() => {
+    if (session) session.current = { editing, draft }
+  }, [session, editing, draft])
   const groups = useMemo(() => {
     const result = new Map<string, ServedComment[]>()
     for (const comment of comments.toSorted(

@@ -2,7 +2,8 @@
 
 This prototype answers a daily-use question: can `ghl` keep one dedicated review
 window while preserving the existing Go backend and React interface? It lives
-on the `poc/wails-desktop` → `poc/wails-tabs` review chain, separately from the desktop-envelope benchmark and the
+on the `poc/wails-desktop` → `poc/wails-tabs` → `poc/wails-tab-state` review chain,
+separately from the desktop-envelope benchmark and the
 default browser CLI. It currently targets macOS on Apple Silicon.
 
 ## Run
@@ -27,10 +28,15 @@ The tab strip supplies selection, per-tab close buttons and **+** to open a
 repository. Arrow keys, Home and End navigate the focused tab strip. `Cmd+W`
 closes the active tab; closing the last tab leaves the welcome screen open.
 Only the active React review is mounted. Inactive tabs retain their route and
-label, not their parsed patch, DOM or a hidden review component. Full restoration
-of draft text and scroll across switches is the next stack layer; use saved
-comments/Viewed for durable review data in this layer. Tab lists are not restored
-after restarting the application.
+label, not their parsed patch, DOM or a hidden review component. Each tab also
+keeps a small, versioned view capture: unified/split mode, scroll position,
+selected lines, inline composer text, comment-panel edits and context-expansion
+coordinates. These survive switching and `Cmd+R`; `Ctrl+Tab` and
+`Ctrl+Shift+Tab` cycle reviews. A user interaction cancels a pending scroll
+restoration. Expansion replay checks each file's diff hash before applying it.
+Captures remain in memory, with a 2 MiB per-tab limit. Closing a tab discards its
+unsaved drafts; quitting the application discards all captures and the tab list.
+Saved comments and Viewed remain durable in repository state.
 
 For daily use, install a separate command:
 
@@ -88,6 +94,7 @@ the next tab's URL. Revision numbers on native tab snapshots reject old replies.
 ```bash
 task wails:test
 task wails:smoke
+task wails:memory
 # Verify a relocated bundle without Node/pnpm/Go in PATH, after building:
 python3 poc/wails/smoke.py --standalone
 ```
@@ -105,6 +112,31 @@ It writes `.task/wails/validation.json` and `.task/wails/smoke.log`.
 The standalone mode copies the complete bundle outside the checkout and reruns
 the same native checks with only the system tools/Git in PATH.
 
+The native suite also checks restoration of an inline draft on expanded context,
+scroll, panel editing, `Ctrl+Tab` and reload with drafts. Go tests check view-copy
+isolation, version/size validation and late captures of closed tabs.
+
+## Navigation memory sample
+
+Three local runs on the Apple M5 Pro/macOS ARM64 machine each warm two tabs and
+then switch ten times. Both temporary fixtures contain 100 text lines and two
+modified lines. The [raw report](./tab-memory.json) keeps every process and
+intermediate sample. This is deliberately smaller than the earlier 40,000-line
+desktop-envelope workload.
+
+The median physical footprint is **116.6 MiB after warming both tabs**, then
+**143.6 MiB after ten switches**; paired growth is 25.7–27.9 MiB. There is always
+one mounted review, and the two view captures total only **366 JSON bytes** in
+this workload. Unmounting views does not make their allocations disappear
+immediately: caches and collection timing still matter. These measurements do
+not isolate the cause of the growth and do not establish a leak or a stable
+long-term plateau. They do not promise a RAM saving on large diffs.
+
+`wails:memory` measures app descendants plus attributed WebKit/network/GPU tasks
+with the same macOS footprint/Mach-time sampler as the envelope benchmark.
+WindowServer and the driver are excluded. Run it without concurrent tests or
+other benchmark loads; no forced garbage collection is requested.
+
 The optional `GHL_DESKTOP_PROBE` path is a local acceptance-test script injected
 into the native document; it is unused in normal launches. Its unique path also
 isolates the test's instance lock, so fixture opens cannot join a user's running
@@ -112,10 +144,15 @@ prototype. Tests do not open
 your personal Chrome or mutate a real repository. The clipboard check writes
 fixture Markdown to the system clipboard.
 
+During the local demonstration, a second invocation sent while the first window
+was still bootstrapping was not registered; retrying after the window was ready
+worked. Concurrent cold launches are not yet guaranteed by the Wails notification
+path. Wait for the first window before sending another review during this prototype.
+
 This is a usable prototype, not a signed/notarised release or an updater. Builds
 are manual/local, with no CI or publication. Native hot reload is not configured;
 the existing `task dev` remains available for browser development. Quit the
 prototype before rebuilding to load new embedded UI/server code. The envelope
 benchmark's RAM measurements do not measure this in-process integration; no
 memory saving is asserted here. Linux/Windows, native image interactions and
-unsaved drafts across a repository change remain outside this validation.
+restoration against a substantially changed diff remain outside this validation.

@@ -21,6 +21,7 @@ import type { TreeEntry } from './FileTree.tsx'
 import { diffFilesLoader, type ContextError } from './diffFiles.ts'
 import { searchDiff } from './diffSearch.ts'
 import { treeOrder } from './fileOrder.ts'
+import type { ReviewSession } from './reviewSession.ts'
 import type {
   Comment,
   DiffPayload,
@@ -38,6 +39,7 @@ export type LoadedReviewDiff = DiffPayload & {
 }
 
 interface ReviewDiffOptions {
+  session?: ReviewSession
   repoId: string | null
   data: LoadedReviewDiff | null
   diffStyle: 'unified' | 'split'
@@ -88,6 +90,7 @@ const threadKey = (path: string, side: DiffSide, line: number) =>
  * The returned view keeps the same React position across review-state updates.
  */
 export function useReviewDiff({
+  session,
   repoId,
   data,
   diffStyle,
@@ -105,13 +108,14 @@ export function useReviewDiff({
 }: ReviewDiffOptions) {
   const viewRef = useRef<CodeViewHandle<undefined>>(null)
   const paneRef = useRef<HTMLDivElement>(null)
+  const scrollerRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [revealedPath, setRevealedPath] = useState<string | null>(null)
   const [commentTarget, setCommentTarget] = useState<ServedComment | null>(null)
+  const [composer, setComposer] = useState<Composer | null>(session?.composer ?? null)
   useEffect(() => {
-    setRevealedPath(null)
-  }, [viewed, data?.range])
-  const [composer, setComposer] = useState<Composer | null>(null)
+    setRevealedPath(composer?.path ?? null)
+  }, [viewed, data?.range, composer?.path])
   const collapseStorageKey = `ghl.collapsed-comments:${repoId}`
   const [collapsedComments, setCollapsedComments] = useState<Set<string>>(() => {
     try {
@@ -146,7 +150,11 @@ export function useReviewDiff({
     }
     return paths
   }, [comments, collapsedComments])
-  const draftsRef = useRef(new Map<string, string>())
+  const draftsRef = useRef(new Map<string, string>(session?.drafts ?? []))
+  const scrollTopRef = useRef(session?.scrollTop ?? 0)
+  const expansionsRef = useRef<ReviewSession['expansions']>(session?.expansions ?? [])
+  const replayed = useRef(new Set<string>())
+  const restored = useRef(false)
   const gutterRequestRef = useRef<SelectedLineRange | null>(null)
   const [contextErrors, setContextErrors] = useState<Record<string, ContextError>>({})
   const [searchOpen, setSearchOpen] = useState(false)
@@ -708,12 +716,136 @@ export function useReviewDiff({
   )
 
   // CodeView measures its own scroller, which needs a real height and overflow.
+  const replayExpansions = useStableCallback(() => {
+    for (const item of viewRef.current?.getInstance()?.getRenderedItems() ?? []) {
+      if (item.type !== 'diff') continue
+      for (const expansion of expansionsRef.current) {
+        const key = `${expansion.path}:${expansion.index}:${expansion.direction}`
+        if (replayed.current.has(key) || item.item.fileDiff.name !== expansion.path) continue
+        if (data?.files.find((file) => file.path === expansion.path)?.hash !== expansion.hash)
+          continue
+        replayed.current.add(key)
+        item.instance.expandHunk(expansion.index, expansion.direction, expansion.count)
+      }
+    }
+  })
+  useEffect(() => {
+    if (!session || !data || items.length === 0 || restored.current) return
+    restored.current = true
+    const index = items.findIndex((item) => item.path === session.activePath)
+    if (index >= 0) setActiveIndex(index)
+    const selectedItem = items.find((item) => item.path === session.selected?.path)
+    if (selectedItem && session.selected)
+      viewRef.current?.setSelectedLines({ id: selectedItem.id, range: session.selected.range })
+    let frame = 0
+    let attempts = 0
+    let positioned = false
+    let interrupted = false
+    const pane = paneRef.current
+    const stop = () => {
+      interrupted = true
+    }
+    for (const event of ['wheel', 'pointerdown', 'keydown', 'touchstart'])
+      pane?.addEventListener(event, stop, { passive: true })
+    const restore = () => {
+      if (interrupted) return
+      replayExpansions()
+      if (!positioned) {
+        viewRef.current?.scrollTo({
+          type: 'position',
+          position: session.scrollTop,
+          behavior: 'instant',
+        })
+        positioned = true
+      } else if (scrollerRef.current) {
+        // scrollTo subtracts the sticky file header. Correct the remaining
+        // logical delta through the scroller, including a paged scroll offset.
+        const logical = viewRef.current?.getInstance()?.getScrollTop() ?? 0
+        scrollerRef.current.scrollTop += session.scrollTop - logical
+      }
+      // Context loading and syntax measurement complete over several frames.
+      if (++attempts < 30) frame = requestAnimationFrame(restore)
+    }
+    frame = requestAnimationFrame(restore)
+    return () => {
+      cancelAnimationFrame(frame)
+      for (const event of ['wheel', 'pointerdown', 'keydown', 'touchstart'])
+        pane?.removeEventListener(event, stop)
+    }
+  }, [session, data, items, replayExpansions])
+  useEffect(() => {
+    if (!session) return
+    const pane = paneRef.current
+    const expanded = (event: MouseEvent) => {
+      const path = event.composedPath()
+      const control = path.find(
+        (node): node is HTMLElement =>
+          node instanceof HTMLElement &&
+          (node.hasAttribute('data-expand-up') ||
+            node.hasAttribute('data-expand-down') ||
+            node.hasAttribute('data-expand-all')),
+      )
+      if (!control) return
+      const separator = path.find(
+        (node): node is HTMLElement =>
+          node instanceof HTMLElement && node.hasAttribute('data-expand-index'),
+      )
+      const host = path.find(
+        (node): node is HTMLElement =>
+          node instanceof HTMLElement && node.tagName === 'DIFFS-CONTAINER',
+      )
+      const file = host?.shadowRoot?.querySelector('[data-title]')?.textContent?.trim()
+      if (!separator || !file) return
+      const direction = control.hasAttribute('data-expand-up')
+        ? 'up'
+        : control.hasAttribute('data-expand-down')
+          ? 'down'
+          : 'both'
+      const index = Number(separator.dataset.expandIndex)
+      const count = direction === 'both' ? Number.MAX_SAFE_INTEGER : 20
+      const previous = expansionsRef.current.find(
+        (item) => item.path === file && item.index === index && item.direction === direction,
+      )
+      if (previous) previous.count += count
+      else
+        expansionsRef.current.push({
+          path: file,
+          index,
+          direction,
+          count,
+          hash: data?.files.find((item) => item.path === file)?.hash ?? null,
+        })
+      replayed.current.add(`${file}:${index}:${direction}`)
+    }
+    pane?.addEventListener('click', expanded, true)
+    return () => pane?.removeEventListener('click', expanded, true)
+  }, [session, data])
+  const captureSession = useStableCallback(() => {
+    const selected = viewRef.current?.getSelectedLines()
+    const selectedItem = items.find((item) => item.id === selected?.id)
+    return {
+      activePath: items[activeIndex]?.path,
+      scrollTop: scrollTopRef.current,
+      composer,
+      drafts: [...draftsRef.current.entries()],
+      selected:
+        selected && selectedItem
+          ? { path: selectedItem.path, range: { ...selected.range } }
+          : undefined,
+      expansions: expansionsRef.current.map((item) => ({ ...item })),
+    }
+  })
   // Keep it first in .diff: a conditional sibling before it would remount the
   // renderer when appearing or disappearing, losing scroll and expanded context.
   const view = (
     <div className="diff" ref={paneRef} tabIndex={-1} role="region" aria-label="Code changes">
       <CodeView
         ref={viewRef}
+        containerRef={scrollerRef}
+        onScroll={(position) => {
+          scrollTopRef.current = position
+          replayExpansions()
+        }}
         items={items}
         options={options}
         renderHeaderMetadata={renderHeaderMetadata}
@@ -810,5 +942,6 @@ export function useReviewDiff({
     commentSelection,
     openSearch,
     stepSearch,
+    captureSession,
   }
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -8,9 +9,10 @@ import (
 )
 
 type reviewTab struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Route string `json:"route"`
+	ID    string          `json:"id"`
+	Name  string          `json:"name"`
+	Route string          `json:"route"`
+	View  json.RawMessage `json:"view,omitempty"`
 }
 type tabSnapshot struct {
 	Revision uint64      `json:"revision"`
@@ -36,6 +38,9 @@ func comparisonKey(route string) string {
 func (t *reviewTabs) snapshotLocked() tabSnapshot {
 	result := t.state
 	result.Tabs = append([]reviewTab{}, t.state.Tabs...)
+	for i := range result.Tabs {
+		result.Tabs[i].View = append(json.RawMessage(nil), result.Tabs[i].View...)
+	}
 	return result
 }
 func (t *reviewTabs) snapshot() tabSnapshot {
@@ -145,3 +150,25 @@ func (d *desktopApp) UpdateTabURL(id, route string) (tabSnapshot, error) {
 	return d.publish(state), nil
 }
 func (d *desktopApp) OpenRepository() { d.chooseRepository() }
+
+func (t *reviewTabs) saveView(id, raw string) error {
+	if len(raw) > 2*1024*1024 || !json.Valid([]byte(raw)) {
+		return fmt.Errorf("invalid or oversized tab view")
+	}
+	var header struct {
+		Version int `json:"version"`
+	}
+	if err := json.Unmarshal([]byte(raw), &header); err != nil || header.Version != 1 {
+		return fmt.Errorf("unsupported tab view")
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	for i := range t.state.Tabs {
+		if t.state.Tabs[i].ID == id {
+			t.state.Tabs[i].View = append(json.RawMessage(nil), raw...)
+			return nil
+		}
+	}
+	return nil // A closed tab is never resurrected by a delayed capture.
+}
+func (d *desktopApp) SaveTabView(id, raw string) error { return d.tabs.saveView(id, raw) }
