@@ -14,8 +14,8 @@ import time
 from metrics import responsible, sample
 from smoke import fixture
 
-ROOT = Path(__file__).resolve().parent.parent.parent
-BINARY = ROOT / '.task/wails/ghl Prototype.app/Contents/MacOS/ghl-desktop'
+ROOT = Path(__file__).resolve().parent.parent
+BINARY = ROOT / '.task/desktop/ghl Desktop.app/Contents/MacOS/ghl-desktop'
 
 
 class Collector(BaseHTTPRequestHandler):
@@ -101,7 +101,7 @@ def main():
                 server.shutdown()
                 server.server_close()
     report['complete'] = True
-    output = ROOT / '.task/wails/tab-memory.json'
+    output = ROOT / '.task/desktop/tab-memory.json'
     output.write_text(json.dumps(report, indent=2))
     print('Results:', output)
 

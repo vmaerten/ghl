@@ -1,4 +1,4 @@
-module github.com/vmaerten/ghl/poc/wails
+module github.com/vmaerten/ghl/desktop
 
 go 1.25.0
 
@@ -37,4 +37,4 @@ require (
 
 require github.com/vmaerten/ghl v0.0.0
 
-replace github.com/vmaerten/ghl => ../../go
+replace github.com/vmaerten/ghl => ../go

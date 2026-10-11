@@ -9,8 +9,8 @@ go/cmd/*/assets/*
 .task/
 .pnpm-store/
 __pycache__/
-poc/wails/assets/*
-!poc/wails/assets/.gitkeep
+desktop/assets/*
+!desktop/assets/.gitkeep
 poc/desktop-bench/*/dist/
 poc/desktop-bench/*/.build/
 poc/desktop-bench/*/target/

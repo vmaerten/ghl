@@ -13,7 +13,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-const help = `ghl-desktop — usable Wails prototype (macOS)
+const help = `ghl-desktop — desktop Git review (macOS)
 
 Usage: ghl-desktop [target] [--repo <path>] [--base <ref>]
 
@@ -22,7 +22,7 @@ Launching it again opens or activates a review tab in the same window.
 Relative paths are resolved from the calling terminal, including later launches.
 Cmd+O opens another repository; Cmd+W closes a tab; Cmd+R reloads; Cmd+Q quits.
 Uses the same .git/ghl/state.json as the browser CLI.
-This prototype is separate from the installed ghl command. No Caddy is needed.
+The desktop app is separate from the installed ghl command. No Caddy is needed.
 `
 
 type launch struct {

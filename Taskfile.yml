@@ -4,34 +4,34 @@ vars:
   AIR_VERSION: v1.62.0
 
 tasks:
-  wails:build:
-    desc: Build the usable macOS desktop prototype (separate from ghl)
+  desktop:build:
+    desc: Build the macOS desktop app
     preconditions:
       - sh: '[ "{{OS}}" = darwin ]'
-        msg: This desktop prototype currently targets macOS
+        msg: The desktop app currently targets macOS
     cmds:
-      - pnpm exec vite build --mode go-desktop --outDir ../poc/wails/assets
-      - touch poc/wails/assets/.gitkeep
-      - mkdir -p '.task/wails/ghl Prototype.app/Contents/MacOS'
+      - pnpm exec vite build --mode go-desktop --outDir ../desktop/assets
+      - touch desktop/assets/.gitkeep
+      - mkdir -p '.task/desktop/ghl Desktop.app/Contents/MacOS'
       - >-
         CGO_ENABLED=1 CGO_LDFLAGS='-framework UniformTypeIdentifiers'
-        go -C poc/wails build -tags production -trimpath -ldflags='-s -w'
-        -o '../../.task/wails/ghl Prototype.app/Contents/MacOS/ghl-desktop' .
-      - cp poc/wails/Info.plist '.task/wails/ghl Prototype.app/Contents/Info.plist'
-      - codesign --force --deep --sign - '.task/wails/ghl Prototype.app'
+        go -C desktop build -tags production -trimpath -ldflags='-s -w'
+        -o '../.task/desktop/ghl Desktop.app/Contents/MacOS/ghl-desktop' .
+      - cp desktop/Info.plist '.task/desktop/ghl Desktop.app/Contents/Info.plist'
+      - codesign --force --deep --sign - '.task/desktop/ghl Desktop.app'
 
-  wails:run:
-    desc: Build and open a review in the reusable prototype window
+  desktop:run:
+    desc: Build and open a review in the reusable desktop window
     cmds:
-      - task: wails:build
-      - "'.task/wails/ghl Prototype.app/Contents/MacOS/ghl-desktop' {{.CLI_ARGS}}"
+      - task: desktop:build
+      - "'.task/desktop/ghl Desktop.app/Contents/MacOS/ghl-desktop' {{.CLI_ARGS}}"
 
-  wails:install:
+  desktop:install:
     desc: Build and link ghl-desktop locally; keep the normal ghl command
     vars:
       INSTALL_DIR: '{{.BIN_DIR | default (printf "%s/.local/bin" (env "HOME"))}}'
     cmds:
-      - task: wails:build
+      - task: desktop:build
       - |
         desktop_bin={{printf "%s/ghl-desktop" .INSTALL_DIR | shellQuote}}
         mkdir -p {{.INSTALL_DIR | shellQuote}}
@@ -39,11 +39,11 @@ tasks:
           echo "Cannot replace existing file or directory: $desktop_bin" >&2
           exit 1
         fi
-        ln -sfn {{printf "%s/.task/wails/ghl Prototype.app/Contents/MacOS/ghl-desktop" .ROOT_DIR | shellQuote}} "$desktop_bin"
+        ln -sfn {{printf "%s/.task/desktop/ghl Desktop.app/Contents/MacOS/ghl-desktop" .ROOT_DIR | shellQuote}} "$desktop_bin"
         printf 'installed %s\n' "$desktop_bin"
 
-  wails:uninstall:
-    desc: Remove the prototype CLI link; preserve review state
+  desktop:uninstall:
+    desc: Remove the desktop CLI link; preserve review state
     vars:
       INSTALL_DIR: '{{.BIN_DIR | default (printf "%s/.local/bin" (env "HOME"))}}'
     cmds:
@@ -51,22 +51,22 @@ tasks:
         desktop_bin={{printf "%s/ghl-desktop" .INSTALL_DIR | shellQuote}}
         if [ -L "$desktop_bin" ]; then rm "$desktop_bin"; fi
 
-  wails:test:
-    desc: Test prototype argument handling, shared backend and origin boundary
+  desktop:test:
+    desc: Test desktop argument handling, shared backend and origin boundary
     cmds:
-      - CGO_ENABLED=1 CGO_LDFLAGS='-framework UniformTypeIdentifiers' go -C poc/wails test -race ./...
+      - CGO_ENABLED=1 CGO_LDFLAGS='-framework UniformTypeIdentifiers' go -C desktop test -race ./...
 
-  wails:smoke:
+  desktop:smoke:
     desc: Exercise the real native window, clipboard and instance reuse on fixtures
     cmds:
-      - task: wails:build
-      - python3 poc/wails/smoke.py
+      - task: desktop:build
+      - python3 desktop/smoke.py
 
-  wails:memory:
+  desktop:memory:
     desc: Measure three local passes of ten warm tab switches (macOS)
     cmds:
-      - task: wails:build
-      - python3 poc/wails/memory.py
+      - task: desktop:build
+      - python3 desktop/memory.py
 
   default:
     cmds:
