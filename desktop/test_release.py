@@ -2,10 +2,11 @@
 import hashlib
 from pathlib import Path
 import tempfile
+import subprocess
 import unittest
 import zipfile
 
-from release import APP, EXECUTABLE, FILES, extract_bundle, verify_checksums
+from release import APP, EXECUTABLE, FILES, ROOT, extract_bundle, verify_checksums
 
 
 class ReleaseGuards(unittest.TestCase):
@@ -26,6 +27,18 @@ class ReleaseGuards(unittest.TestCase):
                 zipped.writestr(info, 'fixture')
             if extra:
                 zipped.writestr(extra, 'unexpected')
+
+    def test_task_build_honors_release_metadata(self):
+        result = subprocess.run([
+            'task', '--dry', 'desktop:build', 'BUILD_VERSION=9.8.7-rc.1',
+            'BUILD_COMMIT=' + '0' * 40, 'BUILD_DATE=2026-01-01T00:00:00Z',
+        ], cwd=ROOT, capture_output=True, text=True, check=True)
+        output = result.stdout + result.stderr
+        for value in ['app.version=9.8.7-rc.1', 'app.commit=' + '0' * 40,
+                      'app.buildDate=2026-01-01T00:00:00Z',
+                      'GHLReleaseVersion -string 9.8.7-rc.1',
+                      'CFBundleShortVersionString -string 9.8.7']:
+            self.assertIn(value, output)
 
     def test_complete_bundle_restores_executable_mode(self):
         self.bundle()

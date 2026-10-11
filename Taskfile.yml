@@ -7,12 +7,16 @@ tasks:
   desktop:build:
     desc: Build the macOS desktop app
     vars:
-      BUILD_VERSION:
+      LOCAL_BUILD_VERSION:
         sh: node -p 'process.env.GHL_BUILD_VERSION ?? require("./package.json").version'
-      BUILD_COMMIT:
+      LOCAL_BUILD_COMMIT:
         sh: git rev-parse HEAD
-      BUILD_DATE:
+      LOCAL_BUILD_DATE:
         sh: git show -s --format=%cI HEAD
+      # Preserve explicit GoReleaser values; task-local constants override CLI vars.
+      BUILD_VERSION: '{{.BUILD_VERSION | default .LOCAL_BUILD_VERSION}}'
+      BUILD_COMMIT: '{{.BUILD_COMMIT | default .LOCAL_BUILD_COMMIT}}'
+      BUILD_DATE: '{{.BUILD_DATE | default .LOCAL_BUILD_DATE}}'
       LDFLAGS: >-
         -s -w
         -X github.com/vmaerten/ghl/internal/app.version={{.BUILD_VERSION}}
