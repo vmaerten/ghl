@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="slate" x1="0" y1="0" x2="0.8" y2="1">
+      <stop stop-color="#3b4655"/>
+      <stop offset="1" stop-color="#1b222c"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0.7" y2="1">
+      <stop stop-color="#fafbfc"/>
+      <stop offset="1" stop-color="#dce4ec"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#b9c6d4"/>
+      <stop offset="1" stop-color="#edf2f7"/>
+    </linearGradient>
+    <filter id="tileShadow" x="-15%" y="-15%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#101722" flood-opacity=".22"/>
+    </filter>
+    <filter id="paperShadow" x="-35%" y="-25%" width="170%" height="165%">
+      <feDropShadow dx="0" dy="22" stdDeviation="23" flood-color="#070e18" flood-opacity=".42"/>
+    </filter>
+  </defs>
+  <!-- Continuous corners and transparent padding for the macOS Dock. -->
+  <path d="M288 64H736C886 64 960 138 960 288V736C960 886 886 960 736 960H288C138 960 64 886 64 736V288C64 138 138 64 288 64Z"
+    fill="url(#slate)" filter="url(#tileShadow)"/>
+  <path d="M288 68H736C882 68 956 142 956 288V736C956 882 882 956 736 956H288C142 956 68 882 68 736V288C68 142 142 68 288 68Z"
+    fill="none" stroke="#d1dfef" stroke-opacity=".15" stroke-width="4"/>
+  <!-- A single diff sheet: large shapes remain clear at Dock size. -->
+  <g filter="url(#paperShadow)">
+    <path d="M326 208H636L762 334V752C762 790 740 812 702 812H326C288 812 266 790 266 752V268C266 230 288 208 326 208Z"
+      fill="url(#paper)"/>
+    <path d="M636 208V292C636 320 650 334 678 334H762Z" fill="url(#fold)"/>
+  </g>
+  <rect x="330" y="294" width="184" height="20" rx="10" fill="#8a99aa"/>
+  <rect x="330" y="336" width="122" height="16" rx="8" fill="#b4bfca"/>
+  <g fill="#238636">
+    <rect x="326" y="418" width="70" height="22" rx="6"/>
+    <rect x="350" y="394" width="22" height="70" rx="6"/>
+    <rect x="426" y="411" width="270" height="36" rx="12"/>
+    <rect x="426" y="463" width="184" height="18" rx="9" opacity=".48"/>
+  </g>
+  <g fill="#da3633">
+    <rect x="326" y="550" width="70" height="22" rx="6"/>
+    <rect x="426" y="543" width="218" height="36" rx="12"/>
+    <rect x="426" y="595" width="270" height="18" rx="9" opacity=".42"/>
+  </g>
+  <rect x="330" y="681" width="66" height="20" rx="7" fill="#8a99aa"/>
+  <rect x="426" y="673" width="270" height="36" rx="12" fill="#8a99aa"/>
+</svg>

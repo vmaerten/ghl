@@ -57,6 +57,16 @@ commands, close tab (`Cmd+W`), reload (`Cmd+R`) and quit (`Cmd+Q`). Closing the 
 Git and macOS system WebKit are the runtime requirements; consumers of a copied
 bundle need no Node, pnpm, Task or Go. No Caddy, DNS or proxy setup is required.
 
+## App icon
+
+The editable icon is `icon/AppIcon.svg`; `icon/AppIcon.png` is its transparent
+1024px export. It extends the browser favicon's green/red diff language into a
+macOS document mark. Export an updated SVG as a transparent 1024×1024 PNG when
+changing the design. `task desktop:icon` uses only macOS `sips` and `iconutil` to
+create the 16–1024px normal/Retina icon sizes. The desktop build copies the ICNS
+into `Contents/Resources` before signing; the release ZIP retains that resource
+and checks its bundle declaration and container.
+
 ## Release archive
 
 `task release:snapshot` invokes GoReleaser OSS to build the CLI and desktop,

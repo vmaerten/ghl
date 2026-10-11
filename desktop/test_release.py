@@ -6,7 +6,7 @@ import subprocess
 import unittest
 import zipfile
 
-from release import APP, EXECUTABLE, FILES, ROOT, extract_bundle, verify_checksums
+from release import APP, EXECUTABLE, FILES, ICON, ROOT, extract_bundle, verify_checksums
 
 
 class ReleaseGuards(unittest.TestCase):
@@ -54,7 +54,7 @@ class ReleaseGuards(unittest.TestCase):
                 self.assertFalse((self.root / 'out').exists())
 
     def test_links_and_missing_files_are_rejected(self):
-        for options, error in [({'link': True}, 'regular'), ({'missing': EXECUTABLE}, 'Incomplete'), ({'executable': False}, 'executable mode')]:
+        for options, error in [({'link': True}, 'regular'), ({'missing': EXECUTABLE}, 'Incomplete'), ({'missing': ICON}, 'Incomplete'), ({'executable': False}, 'executable mode')]:
             with self.subTest(options=options):
                 self.bundle(**options)
                 with self.assertRaisesRegex(ValueError, error):

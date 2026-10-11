@@ -4,6 +4,7 @@
   <key>CFBundleExecutable</key><string>ghl-desktop</string>
   <key>CFBundleIdentifier</key><string>dev.ghl.desktop</string>
   <key>CFBundleName</key><string>ghl Desktop</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleVersion</key><string>1</string>
   <key>CFBundleShortVersionString</key><string>0.0.1</string>

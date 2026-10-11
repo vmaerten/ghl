@@ -62,6 +62,11 @@ archives:
         strip_parent: true
         info:
           mtime: '{{ .CommitDate }}'
+      - src: .task/desktop/ghl Desktop.app/Contents/Resources/AppIcon.icns
+        dst: ghl Desktop.app/Contents/Resources
+        strip_parent: true
+        info:
+          mtime: '{{ .CommitDate }}'
       - src: .task/desktop/ghl Desktop.app/Contents/_CodeSignature/CodeResources
         dst: ghl Desktop.app/Contents/_CodeSignature
         strip_parent: true
