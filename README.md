@@ -240,8 +240,8 @@ a cross-process lock. Stop older Node processes before switching; prototype and
 PoC data stay separate unless explicitly imported. See the [Go runtime guide](./go/README.md)
 and [industrialization project](https://github.com/vmaerten/ghl/issues/97).
 The [release guide](./docs/go-releases.md) covers verified macOS ARM64 archives
-and manual publication from a validated version tag.
-GitHub Actions is disabled; verification runs locally.
+and publication from a validated version tag through `task release`.
+GitHub Actions runs only for stable release tags; PRs and branch pushes do not run CI.
 The [acceptance guide](./docs/go-validation.md) covers the full release gate
 and production runtime measurements.
 The [mise installation guide](./docs/go-installation.md) covers PATH activation,

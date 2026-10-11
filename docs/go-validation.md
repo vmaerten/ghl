@@ -1,7 +1,8 @@
 # Go release acceptance
 
-The initial supported platform is **macOS ARM64**. GitHub Actions is disabled;
-there are no automatic CI checks or hosted release jobs. Maintainers run the
+The initial supported platform is **macOS ARM64**. Pull requests and branch
+pushes do not run CI. Stable version tags run the hosted release job; maintainers
+run the
 locked toolchain and Chrome for Testing 154.0.8037.92 locally, with static checks,
 Go race tests, hot reload, the Node reference suite, installation tests, archive
 validation, production Go acceptance and three-pass runtime measurements.
@@ -75,8 +76,10 @@ bytes, PATH, standalone serving and saved state, then upgrades/rolls back when a
 previous compatible release exists. Published download and historical upgrade
 validation remain pending until the corresponding checks pass.
 
-Run all relevant local checks before publishing. These checks are not enforced
-by a GitHub workflow; publication is manual using the verified archive.
+Run all relevant local checks before pushing a release tag. The tag-only
+workflow enforces archive and native desktop verification through `task release`;
+it does not run the full browser/contract/benchmark acceptance suite. Those
+remain local maintainer checks. See the [release guide](./go-releases.md).
 Measurements check response correctness and record performance; they impose no
 RAM or latency threshold. Go is the default runtime, with an explicit Node
 fallback during the 0.1.x transition.

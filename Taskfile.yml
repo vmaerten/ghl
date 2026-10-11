@@ -289,6 +289,52 @@ tasks:
       - pnpm format:check
       - task: vet
 
+  release:
+    desc: Build, verify and publish the checked-out release tag (optional TAG)
+    vars:
+      RELEASE_REF:
+        sh: |
+          requested_tag={{.TAG | default (env "RELEASE_TAG") | shellQuote}}
+          if [ -n "$requested_tag" ]; then
+            printf '%s' "$requested_tag"
+          else
+            git describe --tags --exact-match HEAD
+          fi
+    env:
+      RELEASE_TAG: '{{.RELEASE_REF}}'
+    cmds:
+      - task: release:build
+        vars: { RELEASE_TAG: '{{.RELEASE_REF}}' }
+      - task: release:publish
+        vars: { RELEASE_TAG: '{{.RELEASE_REF}}' }
+
+  release:publish:
+    internal: true
+    env:
+      RELEASE_TAG: '{{.RELEASE_TAG | default (env "RELEASE_TAG")}}'
+    cmds:
+      - node scripts/release-tag.ts
+      - |
+        set -eu
+        release_version="${RELEASE_TAG#v}"
+        [ "$(node -p 'require("./go/dist/release/metadata.json").version')" = "$release_version" ]
+        [ "$(node -p 'require("./go/dist/release/metadata.json").commit')" = "$(git rev-parse HEAD)" ]
+        [ "$(node -p 'require("./go/dist/release/metadata.json").tag')" = "$RELEASE_TAG" ]
+        (cd go/dist/release && shasum -a 256 -c checksums.txt)
+        set --
+        case "$release_version" in *-*) set -- --prerelease;; esac
+        gh release create "$RELEASE_TAG" --verify-tag --draft \
+          --title "$RELEASE_TAG" --notes-file CHANGELOG.md "$@" \
+          "go/dist/release/ghl_${release_version}_darwin_arm64.tar.gz" \
+          "go/dist/release/ghl-desktop_${release_version}_darwin_arm64.zip" \
+          go/dist/release/checksums.txt
+        gh release edit "$RELEASE_TAG" --verify-tag --draft=false
+
+  test:release:
+    desc: Test release orchestration without publishing or creating repository tags
+    cmds:
+      - python3 -m unittest discover -s test -p 'releaseTask.py'
+
   release:check:
     desc: Validate the GoReleaser configuration
     cmds:
@@ -302,13 +348,18 @@ tasks:
 
   release:build:
     desc: Build and verify a checked-out version tag without publishing
+    env:
+      RELEASE_TAG: '{{.RELEASE_TAG | default (env "RELEASE_TAG")}}'
     cmds:
       - node scripts/release-tag.ts
       - goreleaser release --skip=publish --clean
       - task: release:verify
+        vars: { RELEASE_TAG: '{{.RELEASE_TAG | default (env "RELEASE_TAG")}}' }
 
   release:verify:
     desc: Verify checksums, archive contents, build metadata and embedded UI
+    env:
+      RELEASE_TAG: '{{.RELEASE_TAG | default (env "RELEASE_TAG")}}'
     cmds:
       - node test/goRelease.ts
       - node test/releaseGuards.ts
