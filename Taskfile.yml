@@ -62,6 +62,12 @@ tasks:
       - task: wails:build
       - python3 poc/wails/smoke.py
 
+  wails:memory:
+    desc: Measure three local passes of ten warm tab switches (macOS)
+    cmds:
+      - task: wails:build
+      - python3 poc/wails/memory.py
+
   default:
     cmds:
       - task --list

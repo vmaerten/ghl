@@ -1,0 +1,2432 @@
+{
+  "complete": true,
+  "scope": "macOS physical footprint: app, descendants and attributed WebKit/XPC. Three runs, two 100-line text fixtures, two modified lines per fixture; ten switches after both tabs are warmed. This is a small navigation workload, not the 40,000-line envelope benchmark or a leak proof.",
+  "backend": "in-process",
+  "binary_sha256": "16c7a82ea584dc41c091a93d6f73047af0ec76399332c2bba117714521d2c8a5",
+  "runs": [
+    {
+      "round": 1,
+      "warm": {
+        "phase": "ready",
+        "sequence": 2,
+        "id": "2",
+        "tabs": 2,
+        "views": 1,
+        "viewBytes": 4,
+        "pid": 7010
+      },
+      "before": {
+        "rss_mib": 260.28125,
+        "footprint_mib": 116.56627655029297,
+        "cpu_seconds": 0.8320890833333332,
+        "processes": [
+          {
+            "pid": 7010,
+            "parent": 1,
+            "name": "ghl-desktop",
+            "responsible": 7010,
+            "rss_mib": 115.4375,
+            "footprint_mib": 37.28248596191406,
+            "cpu_seconds": 0.40545679166666665,
+            "process_start": 32178476415575
+          },
+          {
+            "pid": 7011,
+            "parent": 1,
+            "name": "com.apple.WebKit.GPU",
+            "responsible": 7010,
+            "rss_mib": 37.1875,
+            "footprint_mib": 18.750823974609375,
+            "cpu_seconds": 0.09927304166666666,
+            "process_start": 32178479847616
+          },
+          {
+            "pid": 7012,
+            "parent": 1,
+            "name": "com.apple.WebKit.Networking",
+            "responsible": 7010,
+            "rss_mib": 15.703125,
+            "footprint_mib": 5.391197204589844,
+            "cpu_seconds": 0.05980033333333333,
+            "process_start": 32178480088571
+          },
+          {
+            "pid": 7013,
+            "parent": 1,
+            "name": "com.apple.WebKit.WebContent",
+            "responsible": 7010,
+            "rss_mib": 79.359375,
+            "footprint_mib": 49.906959533691406,
+            "cpu_seconds": 0.25161837499999995,
+            "process_start": 32178480206325
+          },
+          {
+            "pid": 7014,
+            "parent": 1,
+            "name": "com.apple.audio.SandboxHelper",
+            "responsible": 7010,
+            "rss_mib": 12.59375,
+            "footprint_mib": 5.234809875488281,
+            "cpu_seconds": 0.015940541666666665,
+            "process_start": 32178483597796
+          }
+        ]
+      },
+      "after": {
+        "rss_mib": 303.875,
+        "footprint_mib": 143.59754943847656,
+        "cpu_seconds": 2.2556705,
+        "processes": [
+          {
+            "pid": 7010,
+            "parent": 1,
+            "name": "ghl-desktop",
+            "responsible": 7010,
+            "rss_mib": 116.234375,
+            "footprint_mib": 37.06373596191406,
+            "cpu_seconds": 1.2127229583333332,
+            "process_start": 32178476415575
+          },
+          {
+            "pid": 7011,
+            "parent": 1,
+            "name": "com.apple.WebKit.GPU",
+            "responsible": 7010,
+            "rss_mib": 38.53125,
+            "footprint_mib": 18.750823974609375,
+            "cpu_seconds": 0.20056749999999998,
+            "process_start": 32178479847616
+          },
+          {
+            "pid": 7012,
+            "parent": 1,
+            "name": "com.apple.WebKit.Networking",
+            "responsible": 7010,
+            "rss_mib": 15.96875,
+            "footprint_mib": 5.313072204589844,
+            "cpu_seconds": 0.1620404583333333,
+            "process_start": 32178480088571
+          },
+          {
+            "pid": 7013,
+            "parent": 1,
+            "name": "com.apple.WebKit.WebContent",
+            "responsible": 7010,
+            "rss_mib": 120.59375,
+            "footprint_mib": 77.281982421875,
+            "cpu_seconds": 0.6643357916666666,
+            "process_start": 32178480206325
+          },
+          {
+            "pid": 7014,
+            "parent": 1,
+            "name": "com.apple.audio.SandboxHelper",
+            "responsible": 7010,
+            "rss_mib": 12.546875,
+            "footprint_mib": 5.187934875488281,
+            "cpu_seconds": 0.016003791666666666,
+            "process_start": 32178483597796
+          }
+        ]
+      },
+      "switches": [
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 3,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 185,
+            "pid": 7010
+          },
+          "memory": {
+            "rss_mib": 265.328125,
+            "footprint_mib": 210.31627655029297,
+            "cpu_seconds": 0.9836379166666666,
+            "processes": [
+              {
+                "pid": 7010,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7010,
+                "rss_mib": 115.375,
+                "footprint_mib": 37.03248596191406,
+                "cpu_seconds": 0.4870025416666666,
+                "process_start": 32178476415575
+              },
+              {
+                "pid": 7011,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7010,
+                "rss_mib": 37.3125,
+                "footprint_mib": 98.31332397460938,
+                "cpu_seconds": 0.11018758333333332,
+                "process_start": 32178479847616
+              },
+              {
+                "pid": 7012,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7010,
+                "rss_mib": 15.78125,
+                "footprint_mib": 5.375572204589844,
+                "cpu_seconds": 0.07024558333333332,
+                "process_start": 32178480088571
+              },
+              {
+                "pid": 7013,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7010,
+                "rss_mib": 84.3125,
+                "footprint_mib": 64.4069595336914,
+                "cpu_seconds": 0.30019841666666663,
+                "process_start": 32178480206325
+              },
+              {
+                "pid": 7014,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7010,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016003791666666666,
+                "process_start": 32178483597796
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 4,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7010
+          },
+          "memory": {
+            "rss_mib": 269.390625,
+            "footprint_mib": 125.11315155029297,
+            "cpu_seconds": 1.1366350833333332,
+            "processes": [
+              {
+                "pid": 7010,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7010,
+                "rss_mib": 115.8125,
+                "footprint_mib": 37.40748596191406,
+                "cpu_seconds": 0.5756740833333333,
+                "process_start": 32178476415575
+              },
+              {
+                "pid": 7011,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7010,
+                "rss_mib": 37.5,
+                "footprint_mib": 18.750823974609375,
+                "cpu_seconds": 0.12026983333333333,
+                "process_start": 32178479847616
+              },
+              {
+                "pid": 7012,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7010,
+                "rss_mib": 15.9375,
+                "footprint_mib": 5.359947204589844,
+                "cpu_seconds": 0.08146925,
+                "process_start": 32178480088571
+              },
+              {
+                "pid": 7013,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7010,
+                "rss_mib": 87.59375,
+                "footprint_mib": 58.406959533691406,
+                "cpu_seconds": 0.343218125,
+                "process_start": 32178480206325
+              },
+              {
+                "pid": 7014,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7010,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016003791666666666,
+                "process_start": 32178483597796
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 5,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7010
+          },
+          "memory": {
+            "rss_mib": 272.875,
+            "footprint_mib": 213.25379943847656,
+            "cpu_seconds": 1.2753368333333333,
+            "processes": [
+              {
+                "pid": 7010,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7010,
+                "rss_mib": 115.90625,
+                "footprint_mib": 37.17311096191406,
+                "cpu_seconds": 0.6548340416666666,
+                "process_start": 32178476415575
+              },
+              {
+                "pid": 7011,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7010,
+                "rss_mib": 37.65625,
+                "footprint_mib": 96.21957397460938,
+                "cpu_seconds": 0.13006816666666665,
+                "process_start": 32178479847616
+              },
+              {
+                "pid": 7012,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7010,
+                "rss_mib": 15.953125,
+                "footprint_mib": 5.359947204589844,
+                "cpu_seconds": 0.09129837499999999,
+                "process_start": 32178480088571
+              },
+              {
+                "pid": 7013,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7010,
+                "rss_mib": 90.8125,
+                "footprint_mib": 69.313232421875,
+                "cpu_seconds": 0.3831324583333333,
+                "process_start": 32178480206325
+              },
+              {
+                "pid": 7014,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7010,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016003791666666666,
+                "process_start": 32178483597796
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 6,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7010
+          },
+          "memory": {
+            "rss_mib": 279.640625,
+            "footprint_mib": 131.42567443847656,
+            "cpu_seconds": 1.417092458333333,
+            "processes": [
+              {
+                "pid": 7010,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7010,
+                "rss_mib": 115.984375,
+                "footprint_mib": 37.29811096191406,
+                "cpu_seconds": 0.7299253749999999,
+                "process_start": 32178476415575
+              },
+              {
+                "pid": 7011,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7010,
+                "rss_mib": 37.78125,
+                "footprint_mib": 18.766448974609375,
+                "cpu_seconds": 0.14025025,
+                "process_start": 32178479847616
+              },
+              {
+                "pid": 7012,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7010,
+                "rss_mib": 15.953125,
+                "footprint_mib": 5.359947204589844,
+                "cpu_seconds": 0.10123783333333332,
+                "process_start": 32178480088571
+              },
+              {
+                "pid": 7013,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7010,
+                "rss_mib": 97.375,
+                "footprint_mib": 64.813232421875,
+                "cpu_seconds": 0.4296752083333333,
+                "process_start": 32178480206325
+              },
+              {
+                "pid": 7014,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7010,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016003791666666666,
+                "process_start": 32178483597796
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 7,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7010
+          },
+          "memory": {
+            "rss_mib": 283.265625,
+            "footprint_mib": 213.16004943847656,
+            "cpu_seconds": 1.5613812499999997,
+            "processes": [
+              {
+                "pid": 7010,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7010,
+                "rss_mib": 116.109375,
+                "footprint_mib": 37.90748596191406,
+                "cpu_seconds": 0.8165284166666665,
+                "process_start": 32178476415575
+              },
+              {
+                "pid": 7011,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7010,
+                "rss_mib": 37.890625,
+                "footprint_mib": 96.29769897460938,
+                "cpu_seconds": 0.14976083333333332,
+                "process_start": 32178479847616
+              },
+              {
+                "pid": 7012,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7010,
+                "rss_mib": 15.953125,
+                "footprint_mib": 5.359947204589844,
+                "cpu_seconds": 0.11001679166666666,
+                "process_start": 32178480088571
+              },
+              {
+                "pid": 7013,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7010,
+                "rss_mib": 100.765625,
+                "footprint_mib": 68.406982421875,
+                "cpu_seconds": 0.46907141666666663,
+                "process_start": 32178480206325
+              },
+              {
+                "pid": 7014,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7010,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016003791666666666,
+                "process_start": 32178483597796
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 8,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7010
+          },
+          "memory": {
+            "rss_mib": 286.5,
+            "footprint_mib": 133.72254943847656,
+            "cpu_seconds": 1.6981286249999998,
+            "processes": [
+              {
+                "pid": 7010,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7010,
+                "rss_mib": 116.140625,
+                "footprint_mib": 37.73561096191406,
+                "cpu_seconds": 0.8935186666666666,
+                "process_start": 32178476415575
+              },
+              {
+                "pid": 7011,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7010,
+                "rss_mib": 38.015625,
+                "footprint_mib": 18.860198974609375,
+                "cpu_seconds": 0.15989066666666665,
+                "process_start": 32178479847616
+              },
+              {
+                "pid": 7012,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7010,
+                "rss_mib": 15.953125,
+                "footprint_mib": 5.359947204589844,
+                "cpu_seconds": 0.12088587499999999,
+                "process_start": 32178480088571
+              },
+              {
+                "pid": 7013,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7010,
+                "rss_mib": 103.84375,
+                "footprint_mib": 66.578857421875,
+                "cpu_seconds": 0.507829625,
+                "process_start": 32178480206325
+              },
+              {
+                "pid": 7014,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7010,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016003791666666666,
+                "process_start": 32178483597796
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 9,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7010
+          },
+          "memory": {
+            "rss_mib": 291.328125,
+            "footprint_mib": 224.92567443847656,
+            "cpu_seconds": 1.8366288749999997,
+            "processes": [
+              {
+                "pid": 7010,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7010,
+                "rss_mib": 116.25,
+                "footprint_mib": 37.67311096191406,
+                "cpu_seconds": 0.9730065833333332,
+                "process_start": 32178476415575
+              },
+              {
+                "pid": 7011,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7010,
+                "rss_mib": 38.125,
+                "footprint_mib": 98.40707397460938,
+                "cpu_seconds": 0.16995904166666664,
+                "process_start": 32178479847616
+              },
+              {
+                "pid": 7012,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7010,
+                "rss_mib": 15.953125,
+                "footprint_mib": 5.313072204589844,
+                "cpu_seconds": 0.13043291666666665,
+                "process_start": 32178480088571
+              },
+              {
+                "pid": 7013,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7010,
+                "rss_mib": 108.453125,
+                "footprint_mib": 78.344482421875,
+                "cpu_seconds": 0.5472265416666666,
+                "process_start": 32178480206325
+              },
+              {
+                "pid": 7014,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7010,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016003791666666666,
+                "process_start": 32178483597796
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 10,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7010
+          },
+          "memory": {
+            "rss_mib": 293.828125,
+            "footprint_mib": 143.50379943847656,
+            "cpu_seconds": 1.9711351666666665,
+            "processes": [
+              {
+                "pid": 7010,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7010,
+                "rss_mib": 116.21875,
+                "footprint_mib": 37.53248596191406,
+                "cpu_seconds": 1.0545833333333332,
+                "process_start": 32178476415575
+              },
+              {
+                "pid": 7011,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7010,
+                "rss_mib": 38.265625,
+                "footprint_mib": 18.828948974609375,
+                "cpu_seconds": 0.17942079166666666,
+                "process_start": 32178479847616
+              },
+              {
+                "pid": 7012,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7010,
+                "rss_mib": 15.96875,
+                "footprint_mib": 5.313072204589844,
+                "cpu_seconds": 0.14003858333333333,
+                "process_start": 32178480088571
+              },
+              {
+                "pid": 7013,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7010,
+                "rss_mib": 110.828125,
+                "footprint_mib": 76.641357421875,
+                "cpu_seconds": 0.5810886666666666,
+                "process_start": 32178480206325
+              },
+              {
+                "pid": 7014,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7010,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016003791666666666,
+                "process_start": 32178483597796
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 11,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7010
+          },
+          "memory": {
+            "rss_mib": 296.65625,
+            "footprint_mib": 225.30067443847656,
+            "cpu_seconds": 2.1017731666666664,
+            "processes": [
+              {
+                "pid": 7010,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7010,
+                "rss_mib": 116.234375,
+                "footprint_mib": 37.20436096191406,
+                "cpu_seconds": 1.1292087499999999,
+                "process_start": 32178476415575
+              },
+              {
+                "pid": 7011,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7010,
+                "rss_mib": 38.390625,
+                "footprint_mib": 98.42269897460938,
+                "cpu_seconds": 0.18935366666666664,
+                "process_start": 32178479847616
+              },
+              {
+                "pid": 7012,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7010,
+                "rss_mib": 15.96875,
+                "footprint_mib": 5.313072204589844,
+                "cpu_seconds": 0.1501735833333333,
+                "process_start": 32178480088571
+              },
+              {
+                "pid": 7013,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7010,
+                "rss_mib": 113.515625,
+                "footprint_mib": 79.172607421875,
+                "cpu_seconds": 0.6170333749999999,
+                "process_start": 32178480206325
+              },
+              {
+                "pid": 7014,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7010,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016003791666666666,
+                "process_start": 32178483597796
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 12,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7010
+          },
+          "memory": {
+            "rss_mib": 303.875,
+            "footprint_mib": 148.11317443847656,
+            "cpu_seconds": 2.2500848333333328,
+            "processes": [
+              {
+                "pid": 7010,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7010,
+                "rss_mib": 116.234375,
+                "footprint_mib": 37.15748596191406,
+                "cpu_seconds": 1.2109470833333331,
+                "process_start": 32178476415575
+              },
+              {
+                "pid": 7011,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7010,
+                "rss_mib": 38.53125,
+                "footprint_mib": 18.750823974609375,
+                "cpu_seconds": 0.19973691666666665,
+                "process_start": 32178479847616
+              },
+              {
+                "pid": 7012,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7010,
+                "rss_mib": 15.96875,
+                "footprint_mib": 5.313072204589844,
+                "cpu_seconds": 0.16111454166666664,
+                "process_start": 32178480088571
+              },
+              {
+                "pid": 7013,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7010,
+                "rss_mib": 120.59375,
+                "footprint_mib": 81.703857421875,
+                "cpu_seconds": 0.6622824999999999,
+                "process_start": 32178480206325
+              },
+              {
+                "pid": 7014,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7010,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016003791666666666,
+                "process_start": 32178483597796
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "warm": {
+        "phase": "ready",
+        "sequence": 2,
+        "id": "2",
+        "tabs": 2,
+        "views": 1,
+        "viewBytes": 4,
+        "pid": 7418
+      },
+      "before": {
+        "rss_mib": 259.203125,
+        "footprint_mib": 116.128662109375,
+        "cpu_seconds": 0.8405805416666666,
+        "processes": [
+          {
+            "pid": 7418,
+            "parent": 1,
+            "name": "ghl-desktop",
+            "responsible": 7418,
+            "rss_mib": 115.28125,
+            "footprint_mib": 37.11058807373047,
+            "cpu_seconds": 0.3986442083333333,
+            "process_start": 32178988556110
+          },
+          {
+            "pid": 7419,
+            "parent": 1,
+            "name": "com.apple.WebKit.GPU",
+            "responsible": 7418,
+            "rss_mib": 36.8125,
+            "footprint_mib": 18.360153198242188,
+            "cpu_seconds": 0.09797716666666666,
+            "process_start": 32178992092216
+          },
+          {
+            "pid": 7420,
+            "parent": 1,
+            "name": "com.apple.WebKit.Networking",
+            "responsible": 7418,
+            "rss_mib": 15.84375,
+            "footprint_mib": 5.39117431640625,
+            "cpu_seconds": 0.06201562499999999,
+            "process_start": 32178992342838
+          },
+          {
+            "pid": 7421,
+            "parent": 1,
+            "name": "com.apple.WebKit.WebContent",
+            "responsible": 7418,
+            "rss_mib": 78.671875,
+            "footprint_mib": 50.03193664550781,
+            "cpu_seconds": 0.26610291666666663,
+            "process_start": 32178992564105
+          },
+          {
+            "pid": 7422,
+            "parent": 1,
+            "name": "com.apple.audio.SandboxHelper",
+            "responsible": 7418,
+            "rss_mib": 12.59375,
+            "footprint_mib": 5.234809875488281,
+            "cpu_seconds": 0.015840624999999997,
+            "process_start": 32178996202078
+          }
+        ]
+      },
+      "after": {
+        "rss_mib": 301.375,
+        "footprint_mib": 144.08185577392578,
+        "cpu_seconds": 2.268353458333333,
+        "processes": [
+          {
+            "pid": 7418,
+            "parent": 1,
+            "name": "ghl-desktop",
+            "responsible": 7418,
+            "rss_mib": 116.609375,
+            "footprint_mib": 37.37623596191406,
+            "cpu_seconds": 1.2138727916666665,
+            "process_start": 32178988556110
+          },
+          {
+            "pid": 7419,
+            "parent": 1,
+            "name": "com.apple.WebKit.GPU",
+            "responsible": 7418,
+            "rss_mib": 38.296875,
+            "footprint_mib": 19.344528198242188,
+            "cpu_seconds": 0.20122787499999997,
+            "process_start": 32178992092216
+          },
+          {
+            "pid": 7420,
+            "parent": 1,
+            "name": "com.apple.WebKit.Networking",
+            "responsible": 7418,
+            "rss_mib": 16.09375,
+            "footprint_mib": 5.31304931640625,
+            "cpu_seconds": 0.15988516666666666,
+            "process_start": 32178992342838
+          },
+          {
+            "pid": 7421,
+            "parent": 1,
+            "name": "com.apple.WebKit.WebContent",
+            "responsible": 7418,
+            "rss_mib": 117.828125,
+            "footprint_mib": 76.860107421875,
+            "cpu_seconds": 0.677461,
+            "process_start": 32178992564105
+          },
+          {
+            "pid": 7422,
+            "parent": 1,
+            "name": "com.apple.audio.SandboxHelper",
+            "responsible": 7418,
+            "rss_mib": 12.546875,
+            "footprint_mib": 5.187934875488281,
+            "cpu_seconds": 0.015906624999999997,
+            "process_start": 32178996202078
+          }
+        ]
+      },
+      "switches": [
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 3,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 185,
+            "pid": 7418
+          },
+          "memory": {
+            "rss_mib": 262.84375,
+            "footprint_mib": 206.5505599975586,
+            "cpu_seconds": 0.9885498749999999,
+            "processes": [
+              {
+                "pid": 7418,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7418,
+                "rss_mib": 115.3125,
+                "footprint_mib": 37.01686096191406,
+                "cpu_seconds": 0.4777161666666666,
+                "process_start": 32178988556110
+              },
+              {
+                "pid": 7419,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7418,
+                "rss_mib": 37.046875,
+                "footprint_mib": 96.50077819824219,
+                "cpu_seconds": 0.10893758333333332,
+                "process_start": 32178992092216
+              },
+              {
+                "pid": 7420,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7418,
+                "rss_mib": 15.90625,
+                "footprint_mib": 5.37554931640625,
+                "cpu_seconds": 0.07232720833333332,
+                "process_start": 32178992342838
+              },
+              {
+                "pid": 7421,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7418,
+                "rss_mib": 82.03125,
+                "footprint_mib": 62.46943664550781,
+                "cpu_seconds": 0.31366229166666665,
+                "process_start": 32178992564105
+              },
+              {
+                "pid": 7422,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7418,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.015906624999999997,
+                "process_start": 32178996202078
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 4,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7418
+          },
+          "memory": {
+            "rss_mib": 267.203125,
+            "footprint_mib": 124.3630599975586,
+            "cpu_seconds": 1.1311644583333331,
+            "processes": [
+              {
+                "pid": 7418,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7418,
+                "rss_mib": 115.78125,
+                "footprint_mib": 37.34498596191406,
+                "cpu_seconds": 0.5565257916666666,
+                "process_start": 32178988556110
+              },
+              {
+                "pid": 7419,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7418,
+                "rss_mib": 37.25,
+                "footprint_mib": 18.875778198242188,
+                "cpu_seconds": 0.11918345833333333,
+                "process_start": 32178992092216
+              },
+              {
+                "pid": 7420,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7418,
+                "rss_mib": 16.0625,
+                "footprint_mib": 5.35992431640625,
+                "cpu_seconds": 0.08263424999999999,
+                "process_start": 32178992342838
+              },
+              {
+                "pid": 7421,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7418,
+                "rss_mib": 85.5625,
+                "footprint_mib": 57.59443664550781,
+                "cpu_seconds": 0.3569143333333333,
+                "process_start": 32178992564105
+              },
+              {
+                "pid": 7422,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7418,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.015906624999999997,
+                "process_start": 32178996202078
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 5,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7418
+          },
+          "memory": {
+            "rss_mib": 270.671875,
+            "footprint_mib": 209.2224349975586,
+            "cpu_seconds": 1.2694027499999998,
+            "processes": [
+              {
+                "pid": 7418,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7418,
+                "rss_mib": 115.84375,
+                "footprint_mib": 37.28248596191406,
+                "cpu_seconds": 0.634682625,
+                "process_start": 32178988556110
+              },
+              {
+                "pid": 7419,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7418,
+                "rss_mib": 37.40625,
+                "footprint_mib": 96.79765319824219,
+                "cpu_seconds": 0.1290095,
+                "process_start": 32178992092216
+              },
+              {
+                "pid": 7420,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7418,
+                "rss_mib": 16.078125,
+                "footprint_mib": 5.35992431640625,
+                "cpu_seconds": 0.09232062499999999,
+                "process_start": 32178992342838
+              },
+              {
+                "pid": 7421,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7418,
+                "rss_mib": 88.796875,
+                "footprint_mib": 64.59443664550781,
+                "cpu_seconds": 0.39748337499999997,
+                "process_start": 32178992564105
+              },
+              {
+                "pid": 7422,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7418,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.015906624999999997,
+                "process_start": 32178996202078
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 6,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7418
+          },
+          "memory": {
+            "rss_mib": 275.359375,
+            "footprint_mib": 130.6755599975586,
+            "cpu_seconds": 1.4133407083333331,
+            "processes": [
+              {
+                "pid": 7418,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7418,
+                "rss_mib": 115.90625,
+                "footprint_mib": 37.17311096191406,
+                "cpu_seconds": 0.7127937499999999,
+                "process_start": 32178988556110
+              },
+              {
+                "pid": 7419,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7418,
+                "rss_mib": 37.53125,
+                "footprint_mib": 19.391403198242188,
+                "cpu_seconds": 0.13985841666666665,
+                "process_start": 32178992092216
+              },
+              {
+                "pid": 7420,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7418,
+                "rss_mib": 16.078125,
+                "footprint_mib": 5.35992431640625,
+                "cpu_seconds": 0.1018755,
+                "process_start": 32178992342838
+              },
+              {
+                "pid": 7421,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7418,
+                "rss_mib": 93.296875,
+                "footprint_mib": 63.56318664550781,
+                "cpu_seconds": 0.44290641666666664,
+                "process_start": 32178992564105
+              },
+              {
+                "pid": 7422,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7418,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.015906624999999997,
+                "process_start": 32178996202078
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 7,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7418
+          },
+          "memory": {
+            "rss_mib": 279.640625,
+            "footprint_mib": 215.9411849975586,
+            "cpu_seconds": 1.5466225833333331,
+            "processes": [
+              {
+                "pid": 7418,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7418,
+                "rss_mib": 116.28125,
+                "footprint_mib": 37.26686096191406,
+                "cpu_seconds": 0.7925375416666666,
+                "process_start": 32178988556110
+              },
+              {
+                "pid": 7419,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7418,
+                "rss_mib": 37.65625,
+                "footprint_mib": 96.81327819824219,
+                "cpu_seconds": 0.14919125,
+                "process_start": 32178992092216
+              },
+              {
+                "pid": 7420,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7418,
+                "rss_mib": 16.078125,
+                "footprint_mib": 5.35992431640625,
+                "cpu_seconds": 0.10893437499999999,
+                "process_start": 32178992342838
+              },
+              {
+                "pid": 7421,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7418,
+                "rss_mib": 97.078125,
+                "footprint_mib": 71.31318664550781,
+                "cpu_seconds": 0.48005279166666665,
+                "process_start": 32178992564105
+              },
+              {
+                "pid": 7422,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7418,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.015906624999999997,
+                "process_start": 32178996202078
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 8,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7418
+          },
+          "memory": {
+            "rss_mib": 283.0,
+            "footprint_mib": 133.0818099975586,
+            "cpu_seconds": 1.6870701666666665,
+            "processes": [
+              {
+                "pid": 7418,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7418,
+                "rss_mib": 116.359375,
+                "footprint_mib": 37.34498596191406,
+                "cpu_seconds": 0.8730537083333333,
+                "process_start": 32178988556110
+              },
+              {
+                "pid": 7419,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7418,
+                "rss_mib": 37.78125,
+                "footprint_mib": 19.313278198242188,
+                "cpu_seconds": 0.15939741666666665,
+                "process_start": 32178992092216
+              },
+              {
+                "pid": 7420,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7418,
+                "rss_mib": 16.078125,
+                "footprint_mib": 5.35992431640625,
+                "cpu_seconds": 0.11947258333333333,
+                "process_start": 32178992342838
+              },
+              {
+                "pid": 7421,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7418,
+                "rss_mib": 100.234375,
+                "footprint_mib": 65.87568664550781,
+                "cpu_seconds": 0.5192398333333332,
+                "process_start": 32178992564105
+              },
+              {
+                "pid": 7422,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7418,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.015906624999999997,
+                "process_start": 32178996202078
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 9,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7418
+          },
+          "memory": {
+            "rss_mib": 288.546875,
+            "footprint_mib": 222.3005828857422,
+            "cpu_seconds": 1.8317644583333332,
+            "processes": [
+              {
+                "pid": 7418,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7418,
+                "rss_mib": 116.453125,
+                "footprint_mib": 37.12623596191406,
+                "cpu_seconds": 0.9571538333333333,
+                "process_start": 32178988556110
+              },
+              {
+                "pid": 7419,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7418,
+                "rss_mib": 37.890625,
+                "footprint_mib": 96.70390319824219,
+                "cpu_seconds": 0.16974983333333332,
+                "process_start": 32178992092216
+              },
+              {
+                "pid": 7420,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7418,
+                "rss_mib": 16.078125,
+                "footprint_mib": 5.31304931640625,
+                "cpu_seconds": 0.12897370833333333,
+                "process_start": 32178992342838
+              },
+              {
+                "pid": 7421,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7418,
+                "rss_mib": 105.578125,
+                "footprint_mib": 77.9694595336914,
+                "cpu_seconds": 0.5599804583333333,
+                "process_start": 32178992564105
+              },
+              {
+                "pid": 7422,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7418,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.015906624999999997,
+                "process_start": 32178996202078
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 10,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7418
+          },
+          "memory": {
+            "rss_mib": 291.046875,
+            "footprint_mib": 138.9568328857422,
+            "cpu_seconds": 1.9698887916666665,
+            "processes": [
+              {
+                "pid": 7418,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7418,
+                "rss_mib": 116.546875,
+                "footprint_mib": 37.26686096191406,
+                "cpu_seconds": 1.0416063333333332,
+                "process_start": 32178988556110
+              },
+              {
+                "pid": 7419,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7418,
+                "rss_mib": 38.03125,
+                "footprint_mib": 19.313278198242188,
+                "cpu_seconds": 0.1797720833333333,
+                "process_start": 32178992092216
+              },
+              {
+                "pid": 7420,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7418,
+                "rss_mib": 16.09375,
+                "footprint_mib": 5.31304931640625,
+                "cpu_seconds": 0.13859191666666665,
+                "process_start": 32178992342838
+              },
+              {
+                "pid": 7421,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7418,
+                "rss_mib": 107.828125,
+                "footprint_mib": 71.8757095336914,
+                "cpu_seconds": 0.5940118333333333,
+                "process_start": 32178992564105
+              },
+              {
+                "pid": 7422,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7418,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.015906624999999997,
+                "process_start": 32178996202078
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 11,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7418
+          },
+          "memory": {
+            "rss_mib": 293.953125,
+            "footprint_mib": 227.0662078857422,
+            "cpu_seconds": 2.1120561249999996,
+            "processes": [
+              {
+                "pid": 7418,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7418,
+                "rss_mib": 116.578125,
+                "footprint_mib": 37.34498596191406,
+                "cpu_seconds": 1.1283884583333332,
+                "process_start": 32178988556110
+              },
+              {
+                "pid": 7419,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7418,
+                "rss_mib": 38.171875,
+                "footprint_mib": 96.75077819824219,
+                "cpu_seconds": 0.19020283333333332,
+                "process_start": 32178992092216
+              },
+              {
+                "pid": 7420,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7418,
+                "rss_mib": 16.09375,
+                "footprint_mib": 5.31304931640625,
+                "cpu_seconds": 0.1479645,
+                "process_start": 32178992342838
+              },
+              {
+                "pid": 7421,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7418,
+                "rss_mib": 110.5625,
+                "footprint_mib": 82.4694595336914,
+                "cpu_seconds": 0.6295937083333333,
+                "process_start": 32178992564105
+              },
+              {
+                "pid": 7422,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7418,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.015906624999999997,
+                "process_start": 32178996202078
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 12,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 7418
+          },
+          "memory": {
+            "rss_mib": 301.375,
+            "footprint_mib": 152.56623077392578,
+            "cpu_seconds": 2.2617055416666667,
+            "processes": [
+              {
+                "pid": 7418,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 7418,
+                "rss_mib": 116.609375,
+                "footprint_mib": 37.53248596191406,
+                "cpu_seconds": 1.2121072916666666,
+                "process_start": 32178988556110
+              },
+              {
+                "pid": 7419,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 7418,
+                "rss_mib": 38.296875,
+                "footprint_mib": 19.344528198242188,
+                "cpu_seconds": 0.19983420833333332,
+                "process_start": 32178992092216
+              },
+              {
+                "pid": 7420,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 7418,
+                "rss_mib": 16.09375,
+                "footprint_mib": 5.31304931640625,
+                "cpu_seconds": 0.15888775,
+                "process_start": 32178992342838
+              },
+              {
+                "pid": 7421,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 7418,
+                "rss_mib": 117.828125,
+                "footprint_mib": 85.188232421875,
+                "cpu_seconds": 0.6749696666666666,
+                "process_start": 32178992564105
+              },
+              {
+                "pid": 7422,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 7418,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.015906624999999997,
+                "process_start": 32178996202078
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "warm": {
+        "phase": "ready",
+        "sequence": 2,
+        "id": "2",
+        "tabs": 2,
+        "views": 1,
+        "viewBytes": 4,
+        "pid": 8380
+      },
+      "before": {
+        "rss_mib": 259.703125,
+        "footprint_mib": 117.0505599975586,
+        "cpu_seconds": 0.8372759583333332,
+        "processes": [
+          {
+            "pid": 8380,
+            "parent": 1,
+            "name": "ghl-desktop",
+            "responsible": 8380,
+            "rss_mib": 115.34375,
+            "footprint_mib": 37.54811096191406,
+            "cpu_seconds": 0.39782649999999997,
+            "process_start": 32179502784600
+          },
+          {
+            "pid": 8381,
+            "parent": 1,
+            "name": "com.apple.WebKit.GPU",
+            "responsible": 8380,
+            "rss_mib": 36.65625,
+            "footprint_mib": 18.360130310058594,
+            "cpu_seconds": 0.09875620833333332,
+            "process_start": 32179506645862
+          },
+          {
+            "pid": 8382,
+            "parent": 1,
+            "name": "com.apple.WebKit.Networking",
+            "responsible": 8380,
+            "rss_mib": 15.6875,
+            "footprint_mib": 5.406822204589844,
+            "cpu_seconds": 0.05918645833333333,
+            "process_start": 32179506883722
+          },
+          {
+            "pid": 8383,
+            "parent": 1,
+            "name": "com.apple.WebKit.WebContent",
+            "responsible": 8380,
+            "rss_mib": 79.421875,
+            "footprint_mib": 50.50068664550781,
+            "cpu_seconds": 0.26551479166666664,
+            "process_start": 32179507126684
+          },
+          {
+            "pid": 8384,
+            "parent": 1,
+            "name": "com.apple.audio.SandboxHelper",
+            "responsible": 8380,
+            "rss_mib": 12.59375,
+            "footprint_mib": 5.234809875488281,
+            "cpu_seconds": 0.015992,
+            "process_start": 32179510920199
+          }
+        ]
+      },
+      "after": {
+        "rss_mib": 300.515625,
+        "footprint_mib": 142.70685577392578,
+        "cpu_seconds": 2.2607991249999997,
+        "processes": [
+          {
+            "pid": 8380,
+            "parent": 1,
+            "name": "ghl-desktop",
+            "responsible": 8380,
+            "rss_mib": 116.015625,
+            "footprint_mib": 36.98561096191406,
+            "cpu_seconds": 1.2025473333333332,
+            "process_start": 32179502784600
+          },
+          {
+            "pid": 8381,
+            "parent": 1,
+            "name": "com.apple.WebKit.GPU",
+            "responsible": 8380,
+            "rss_mib": 38.65625,
+            "footprint_mib": 19.078880310058594,
+            "cpu_seconds": 0.20167195833333332,
+            "process_start": 32179506645862
+          },
+          {
+            "pid": 8382,
+            "parent": 1,
+            "name": "com.apple.WebKit.Networking",
+            "responsible": 8380,
+            "rss_mib": 15.9375,
+            "footprint_mib": 5.313072204589844,
+            "cpu_seconds": 0.15908445833333332,
+            "process_start": 32179506883722
+          },
+          {
+            "pid": 8383,
+            "parent": 1,
+            "name": "com.apple.WebKit.WebContent",
+            "responsible": 8380,
+            "rss_mib": 117.359375,
+            "footprint_mib": 76.141357421875,
+            "cpu_seconds": 0.6814319999999999,
+            "process_start": 32179507126684
+          },
+          {
+            "pid": 8384,
+            "parent": 1,
+            "name": "com.apple.audio.SandboxHelper",
+            "responsible": 8380,
+            "rss_mib": 12.546875,
+            "footprint_mib": 5.187934875488281,
+            "cpu_seconds": 0.016063374999999998,
+            "process_start": 32179510920199
+          }
+        ]
+      },
+      "switches": [
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 3,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 185,
+            "pid": 8380
+          },
+          "memory": {
+            "rss_mib": 263.59375,
+            "footprint_mib": 205.1911849975586,
+            "cpu_seconds": 0.9905120833333332,
+            "processes": [
+              {
+                "pid": 8380,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 8380,
+                "rss_mib": 115.375,
+                "footprint_mib": 37.45436096191406,
+                "cpu_seconds": 0.47787712499999996,
+                "process_start": 32179502784600
+              },
+              {
+                "pid": 8381,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 8380,
+                "rss_mib": 37.296875,
+                "footprint_mib": 98.3601303100586,
+                "cpu_seconds": 0.10878166666666665,
+                "process_start": 32179506645862
+              },
+              {
+                "pid": 8382,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 8380,
+                "rss_mib": 15.75,
+                "footprint_mib": 5.375572204589844,
+                "cpu_seconds": 0.06942141666666667,
+                "process_start": 32179506883722
+              },
+              {
+                "pid": 8383,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 8380,
+                "rss_mib": 82.625,
+                "footprint_mib": 58.81318664550781,
+                "cpu_seconds": 0.31836849999999994,
+                "process_start": 32179507126684
+              },
+              {
+                "pid": 8384,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 8380,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016063374999999998,
+                "process_start": 32179510920199
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 4,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 8380
+          },
+          "memory": {
+            "rss_mib": 266.46875,
+            "footprint_mib": 123.9880599975586,
+            "cpu_seconds": 1.130033375,
+            "processes": [
+              {
+                "pid": 8380,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 8380,
+                "rss_mib": 115.671875,
+                "footprint_mib": 37.89186096191406,
+                "cpu_seconds": 0.5533887916666667,
+                "process_start": 32179502784600
+              },
+              {
+                "pid": 8381,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 8380,
+                "rss_mib": 37.453125,
+                "footprint_mib": 18.703880310058594,
+                "cpu_seconds": 0.11913908333333333,
+                "process_start": 32179506645862
+              },
+              {
+                "pid": 8382,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 8380,
+                "rss_mib": 15.90625,
+                "footprint_mib": 5.359947204589844,
+                "cpu_seconds": 0.07943220833333332,
+                "process_start": 32179506883722
+              },
+              {
+                "pid": 8383,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 8380,
+                "rss_mib": 84.890625,
+                "footprint_mib": 56.84443664550781,
+                "cpu_seconds": 0.36200991666666665,
+                "process_start": 32179507126684
+              },
+              {
+                "pid": 8384,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 8380,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016063374999999998,
+                "process_start": 32179510920199
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 5,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 8380
+          },
+          "memory": {
+            "rss_mib": 269.703125,
+            "footprint_mib": 214.7536849975586,
+            "cpu_seconds": 1.273119,
+            "processes": [
+              {
+                "pid": 8380,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 8380,
+                "rss_mib": 115.75,
+                "footprint_mib": 37.86061096191406,
+                "cpu_seconds": 0.6374229166666666,
+                "process_start": 32179502784600
+              },
+              {
+                "pid": 8381,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 8380,
+                "rss_mib": 37.703125,
+                "footprint_mib": 98.9382553100586,
+                "cpu_seconds": 0.12971829166666665,
+                "process_start": 32179506645862
+              },
+              {
+                "pid": 8382,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 8380,
+                "rss_mib": 15.921875,
+                "footprint_mib": 5.359947204589844,
+                "cpu_seconds": 0.08888920833333333,
+                "process_start": 32179506883722
+              },
+              {
+                "pid": 8383,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 8380,
+                "rss_mib": 87.78125,
+                "footprint_mib": 67.40693664550781,
+                "cpu_seconds": 0.40102520833333327,
+                "process_start": 32179507126684
+              },
+              {
+                "pid": 8384,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 8380,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016063374999999998,
+                "process_start": 32179510920199
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 6,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 8380
+          },
+          "memory": {
+            "rss_mib": 274.515625,
+            "footprint_mib": 133.9099349975586,
+            "cpu_seconds": 1.4202051249999998,
+            "processes": [
+              {
+                "pid": 8380,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 8380,
+                "rss_mib": 115.75,
+                "footprint_mib": 37.54811096191406,
+                "cpu_seconds": 0.7191896666666666,
+                "process_start": 32179502784600
+              },
+              {
+                "pid": 8381,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 8380,
+                "rss_mib": 37.875,
+                "footprint_mib": 19.063255310058594,
+                "cpu_seconds": 0.140355875,
+                "process_start": 32179506645862
+              },
+              {
+                "pid": 8382,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 8380,
+                "rss_mib": 15.921875,
+                "footprint_mib": 5.359947204589844,
+                "cpu_seconds": 0.09817333333333332,
+                "process_start": 32179506883722
+              },
+              {
+                "pid": 8383,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 8380,
+                "rss_mib": 92.421875,
+                "footprint_mib": 66.75068664550781,
+                "cpu_seconds": 0.44642287499999994,
+                "process_start": 32179507126684
+              },
+              {
+                "pid": 8384,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 8380,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016063374999999998,
+                "process_start": 32179510920199
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 7,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 8380
+          },
+          "memory": {
+            "rss_mib": 278.375,
+            "footprint_mib": 213.4880599975586,
+            "cpu_seconds": 1.5602478749999997,
+            "processes": [
+              {
+                "pid": 8380,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 8380,
+                "rss_mib": 115.875,
+                "footprint_mib": 37.68873596191406,
+                "cpu_seconds": 0.8015516249999999,
+                "process_start": 32179502784600
+              },
+              {
+                "pid": 8381,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 8380,
+                "rss_mib": 38.0,
+                "footprint_mib": 98.7976303100586,
+                "cpu_seconds": 0.15020054166666666,
+                "process_start": 32179506645862
+              },
+              {
+                "pid": 8382,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 8380,
+                "rss_mib": 15.921875,
+                "footprint_mib": 5.359947204589844,
+                "cpu_seconds": 0.10772008333333333,
+                "process_start": 32179506883722
+              },
+              {
+                "pid": 8383,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 8380,
+                "rss_mib": 96.03125,
+                "footprint_mib": 66.45381164550781,
+                "cpu_seconds": 0.48471224999999996,
+                "process_start": 32179507126684
+              },
+              {
+                "pid": 8384,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 8380,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016063374999999998,
+                "process_start": 32179510920199
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 8,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 8380
+          },
+          "memory": {
+            "rss_mib": 282.0625,
+            "footprint_mib": 135.9880599975586,
+            "cpu_seconds": 1.6964936666666666,
+            "processes": [
+              {
+                "pid": 8380,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 8380,
+                "rss_mib": 115.921875,
+                "footprint_mib": 37.17311096191406,
+                "cpu_seconds": 0.8810066249999999,
+                "process_start": 32179502784600
+              },
+              {
+                "pid": 8381,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 8380,
+                "rss_mib": 38.140625,
+                "footprint_mib": 19.063255310058594,
+                "cpu_seconds": 0.15976325,
+                "process_start": 32179506645862
+              },
+              {
+                "pid": 8382,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 8380,
+                "rss_mib": 15.921875,
+                "footprint_mib": 5.359947204589844,
+                "cpu_seconds": 0.11823991666666665,
+                "process_start": 32179506883722
+              },
+              {
+                "pid": 8383,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 8380,
+                "rss_mib": 99.53125,
+                "footprint_mib": 69.20381164550781,
+                "cpu_seconds": 0.5214205,
+                "process_start": 32179507126684
+              },
+              {
+                "pid": 8384,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 8380,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016063374999999998,
+                "process_start": 32179510920199
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 9,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 8380
+          },
+          "memory": {
+            "rss_mib": 287.515625,
+            "footprint_mib": 223.7068328857422,
+            "cpu_seconds": 1.8342249166666664,
+            "processes": [
+              {
+                "pid": 8380,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 8380,
+                "rss_mib": 115.9375,
+                "footprint_mib": 37.18873596191406,
+                "cpu_seconds": 0.9590733333333332,
+                "process_start": 32179502784600
+              },
+              {
+                "pid": 8381,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 8380,
+                "rss_mib": 38.25,
+                "footprint_mib": 98.7663803100586,
+                "cpu_seconds": 0.16944991666666664,
+                "process_start": 32179506645862
+              },
+              {
+                "pid": 8382,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 8380,
+                "rss_mib": 15.921875,
+                "footprint_mib": 5.328697204589844,
+                "cpu_seconds": 0.12793279166666666,
+                "process_start": 32179506883722
+              },
+              {
+                "pid": 8383,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 8380,
+                "rss_mib": 104.859375,
+                "footprint_mib": 77.2350845336914,
+                "cpu_seconds": 0.5617055,
+                "process_start": 32179507126684
+              },
+              {
+                "pid": 8384,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 8380,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016063374999999998,
+                "process_start": 32179510920199
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 10,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 8380
+          },
+          "memory": {
+            "rss_mib": 289.953125,
+            "footprint_mib": 137.6912078857422,
+            "cpu_seconds": 1.970684333333333,
+            "processes": [
+              {
+                "pid": 8380,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 8380,
+                "rss_mib": 115.96875,
+                "footprint_mib": 36.93873596191406,
+                "cpu_seconds": 1.0409857916666665,
+                "process_start": 32179502784600
+              },
+              {
+                "pid": 8381,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 8380,
+                "rss_mib": 38.375,
+                "footprint_mib": 19.032005310058594,
+                "cpu_seconds": 0.18013004166666666,
+                "process_start": 32179506645862
+              },
+              {
+                "pid": 8382,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 8380,
+                "rss_mib": 15.9375,
+                "footprint_mib": 5.328697204589844,
+                "cpu_seconds": 0.13734724999999998,
+                "process_start": 32179506883722
+              },
+              {
+                "pid": 8383,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 8380,
+                "rss_mib": 107.125,
+                "footprint_mib": 71.2038345336914,
+                "cpu_seconds": 0.596157875,
+                "process_start": 32179507126684
+              },
+              {
+                "pid": 8384,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 8380,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016063374999999998,
+                "process_start": 32179510920199
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 11,
+            "id": "1",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 8380
+          },
+          "memory": {
+            "rss_mib": 292.796875,
+            "footprint_mib": 228.3787078857422,
+            "cpu_seconds": 2.1091790833333333,
+            "processes": [
+              {
+                "pid": 8380,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 8380,
+                "rss_mib": 116.015625,
+                "footprint_mib": 37.36061096191406,
+                "cpu_seconds": 1.1226722083333331,
+                "process_start": 32179502784600
+              },
+              {
+                "pid": 8381,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 8380,
+                "rss_mib": 38.515625,
+                "footprint_mib": 98.7976303100586,
+                "cpu_seconds": 0.1906685,
+                "process_start": 32179506645862
+              },
+              {
+                "pid": 8382,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 8380,
+                "rss_mib": 15.9375,
+                "footprint_mib": 5.328697204589844,
+                "cpu_seconds": 0.146535375,
+                "process_start": 32179506883722
+              },
+              {
+                "pid": 8383,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 8380,
+                "rss_mib": 109.78125,
+                "footprint_mib": 81.7038345336914,
+                "cpu_seconds": 0.633239625,
+                "process_start": 32179507126684
+              },
+              {
+                "pid": 8384,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 8380,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016063374999999998,
+                "process_start": 32179510920199
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "phase": "ready",
+            "sequence": 12,
+            "id": "2",
+            "tabs": 2,
+            "views": 1,
+            "viewBytes": 366,
+            "pid": 8380
+          },
+          "memory": {
+            "rss_mib": 300.515625,
+            "footprint_mib": 144.86310577392578,
+            "cpu_seconds": 2.255290333333333,
+            "processes": [
+              {
+                "pid": 8380,
+                "parent": 1,
+                "name": "ghl-desktop",
+                "responsible": 8380,
+                "rss_mib": 116.015625,
+                "footprint_mib": 37.17311096191406,
+                "cpu_seconds": 1.2009223333333332,
+                "process_start": 32179502784600
+              },
+              {
+                "pid": 8381,
+                "parent": 1,
+                "name": "com.apple.WebKit.GPU",
+                "responsible": 8380,
+                "rss_mib": 38.65625,
+                "footprint_mib": 19.078880310058594,
+                "cpu_seconds": 0.200693625,
+                "process_start": 32179506645862
+              },
+              {
+                "pid": 8382,
+                "parent": 1,
+                "name": "com.apple.WebKit.Networking",
+                "responsible": 8380,
+                "rss_mib": 15.9375,
+                "footprint_mib": 5.328697204589844,
+                "cpu_seconds": 0.1581088333333333,
+                "process_start": 32179506883722
+              },
+              {
+                "pid": 8383,
+                "parent": 1,
+                "name": "com.apple.WebKit.WebContent",
+                "responsible": 8380,
+                "rss_mib": 117.359375,
+                "footprint_mib": 78.094482421875,
+                "cpu_seconds": 0.6795021666666666,
+                "process_start": 32179507126684
+              },
+              {
+                "pid": 8384,
+                "parent": 1,
+                "name": "com.apple.audio.SandboxHelper",
+                "responsible": 8380,
+                "rss_mib": 12.546875,
+                "footprint_mib": 5.187934875488281,
+                "cpu_seconds": 0.016063374999999998,
+                "process_start": 32179510920199
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

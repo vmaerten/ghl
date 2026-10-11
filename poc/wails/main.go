@@ -106,8 +106,12 @@ func run() error {
 	appMenu := menu.NewMenuFromItems(menu.AppMenu(), menu.EditMenu())
 	fileMenu := appMenu.AddSubmenu("File")
 	fileMenu.AddText("Open repository…", keys.CmdOrCtrl("o"), func(*menu.CallbackData) { desktop.chooseRepository() })
-	fileMenu.AddText("Refresh", keys.CmdOrCtrl("r"), func(*menu.CallbackData) { runtime.WindowReload(desktop.runtimeContext()) })
-	fileMenu.AddText("Close tab", keys.CmdOrCtrl("w"), func(*menu.CallbackData) { desktop.CloseTab(desktop.Tabs().Active) })
+	fileMenu.AddText("Refresh", keys.CmdOrCtrl("r"), func(*menu.CallbackData) {
+		runtime.WindowExecJS(desktop.runtimeContext(), "window.dispatchEvent(new Event('desktop:reload'))")
+	})
+	fileMenu.AddText("Close tab", keys.CmdOrCtrl("w"), func(*menu.CallbackData) {
+		runtime.WindowExecJS(desktop.runtimeContext(), "window.dispatchEvent(new Event('desktop:close-active'))")
+	})
 	return wails.Run(&options.App{
 		Title: "ghl — desktop prototype", Width: 1280, Height: 800, MinWidth: 800, MinHeight: 500,
 		Menu: appMenu, EnableDefaultContextMenu: true,
