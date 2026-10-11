@@ -15,12 +15,14 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
 APP = 'ghl Desktop.app'
+ICON = f'{APP}/Contents/Resources/AppIcon.icns'
 EXECUTABLE = f'{APP}/Contents/MacOS/ghl-desktop'
 FILES = {
     'LICENSE',
     'THIRD_PARTY_NOTICES.txt',
     f'{APP}/Contents/Info.plist',
     EXECUTABLE,
+    ICON,
     f'{APP}/Contents/_CodeSignature/CodeResources',
 }
 DIRECTORIES = {str(parent) for name in FILES for parent in Path(name).parents if str(parent) != '.'}
@@ -128,10 +130,13 @@ def verify(dist):
         info = plistlib.loads((bundle / 'Contents/Info.plist').read_bytes())
         for key, value in {
             'CFBundleName': 'ghl Desktop', 'CFBundleIdentifier': 'dev.ghl.desktop',
-            'CFBundleExecutable': 'ghl-desktop', 'GHLReleaseVersion': metadata['version'],
+            'CFBundleExecutable': 'ghl-desktop', 'CFBundleIconFile': 'AppIcon',
+            'GHLReleaseVersion': metadata['version'],
             'GHLCommit': metadata['commit'], 'CFBundleShortVersionString': metadata['version'].split('-')[0],
         }.items():
             require(info.get(key) == value, f'Wrong bundle metadata: {key}')
+        icon = (folder / ICON).read_bytes()
+        require(icon[:4] == b'icns' and int.from_bytes(icon[4:8], 'big') == len(icon), 'Invalid macOS icon container')
         settings = command('go', 'version', '-m', str(binary))
         for setting in ['CGO_ENABLED=1', 'GOOS=darwin', 'GOARCH=arm64', '-trimpath=true', '-tags=production']:
             require(setting in settings, f'Wrong desktop build setting: {setting}')
