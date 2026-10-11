@@ -8,3 +8,6 @@ go/cmd/*/assets/*
 !go/cmd/*/assets/.gitkeep
 .task/
 .pnpm-store/
+__pycache__/
+poc/wails/assets/*
+!poc/wails/assets/.gitkeep

@@ -9,6 +9,10 @@ The default runtime is Go with the React interface embedded. The initial support
 release platform is **macOS on Apple Silicon (ARM64)**. Git and a browser are the
 only runtime prerequisites. See the [installation guide](./docs/go-installation.md).
 
+A [Wails desktop prototype](./poc/wails/README.md) opens the same review UI in a
+single reusable native window: `task wails:run -- --repo .`. It is optional and
+keeps the installed browser CLI separate.
+
 | key       | action                           |
 | --------- | -------------------------------- |
 | `j` / `k` | next / previous file             |

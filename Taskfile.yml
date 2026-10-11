@@ -4,6 +4,64 @@ vars:
   AIR_VERSION: v1.62.0
 
 tasks:
+  wails:build:
+    desc: Build the usable macOS desktop prototype (separate from ghl)
+    preconditions:
+      - sh: '[ "{{OS}}" = darwin ]'
+        msg: This desktop prototype currently targets macOS
+    cmds:
+      - pnpm exec vite build --mode go --outDir ../poc/wails/assets
+      - touch poc/wails/assets/.gitkeep
+      - mkdir -p '.task/wails/ghl Prototype.app/Contents/MacOS'
+      - >-
+        CGO_ENABLED=1 CGO_LDFLAGS='-framework UniformTypeIdentifiers'
+        go -C poc/wails build -tags production -trimpath -ldflags='-s -w'
+        -o '../../.task/wails/ghl Prototype.app/Contents/MacOS/ghl-desktop' .
+      - cp poc/wails/Info.plist '.task/wails/ghl Prototype.app/Contents/Info.plist'
+      - codesign --force --deep --sign - '.task/wails/ghl Prototype.app'
+
+  wails:run:
+    desc: Build and open a review in the reusable prototype window
+    cmds:
+      - task: wails:build
+      - "'.task/wails/ghl Prototype.app/Contents/MacOS/ghl-desktop' {{.CLI_ARGS}}"
+
+  wails:install:
+    desc: Build and link ghl-desktop locally; keep the normal ghl command
+    vars:
+      INSTALL_DIR: '{{.BIN_DIR | default (printf "%s/.local/bin" (env "HOME"))}}'
+    cmds:
+      - task: wails:build
+      - |
+        desktop_bin={{printf "%s/ghl-desktop" .INSTALL_DIR | shellQuote}}
+        mkdir -p {{.INSTALL_DIR | shellQuote}}
+        if [ -e "$desktop_bin" ] && [ ! -L "$desktop_bin" ]; then
+          echo "Cannot replace existing file or directory: $desktop_bin" >&2
+          exit 1
+        fi
+        ln -sfn {{printf "%s/.task/wails/ghl Prototype.app/Contents/MacOS/ghl-desktop" .ROOT_DIR | shellQuote}} "$desktop_bin"
+        printf 'installed %s\n' "$desktop_bin"
+
+  wails:uninstall:
+    desc: Remove the prototype CLI link; preserve review state
+    vars:
+      INSTALL_DIR: '{{.BIN_DIR | default (printf "%s/.local/bin" (env "HOME"))}}'
+    cmds:
+      - |
+        desktop_bin={{printf "%s/ghl-desktop" .INSTALL_DIR | shellQuote}}
+        if [ -L "$desktop_bin" ]; then rm "$desktop_bin"; fi
+
+  wails:test:
+    desc: Test prototype argument handling, shared backend and origin boundary
+    cmds:
+      - CGO_ENABLED=1 CGO_LDFLAGS='-framework UniformTypeIdentifiers' go -C poc/wails test -race ./...
+
+  wails:smoke:
+    desc: Exercise the real native window, clipboard and instance reuse on fixtures
+    cmds:
+      - task: wails:build
+      - python3 poc/wails/smoke.py
+
   default:
     cmds:
       - task --list
