@@ -8,6 +8,8 @@ before:
     - pnpm exec vite build --mode go
     - touch go/cmd/ghl/assets/.gitkeep
     - node scripts/release-notices.ts
+    - task desktop:build BUILD_VERSION={{ .Version }} BUILD_COMMIT={{ .FullCommit }} BUILD_DATE={{ .CommitDate }}
+    - python3 desktop/release.py notices
 
 builds:
   - id: ghl
@@ -40,6 +42,35 @@ archives:
         info:
           mtime: '{{ .CommitDate }}'
       - src: .task/release/THIRD_PARTY_NOTICES.txt
+        strip_parent: true
+        info:
+          mtime: '{{ .CommitDate }}'
+
+  - id: desktop
+    meta: true
+    formats: [zip]
+    # Meta archives have no build target; the native Task build is macOS ARM64.
+    name_template: 'ghl-desktop_{{ .Version }}_darwin_arm64'
+    files:
+      - src: .task/desktop/ghl Desktop.app/Contents/Info.plist
+        dst: ghl Desktop.app/Contents
+        strip_parent: true
+        info:
+          mtime: '{{ .CommitDate }}'
+      - src: .task/desktop/ghl Desktop.app/Contents/MacOS/ghl-desktop
+        dst: ghl Desktop.app/Contents/MacOS
+        strip_parent: true
+        info:
+          mtime: '{{ .CommitDate }}'
+      - src: .task/desktop/ghl Desktop.app/Contents/_CodeSignature/CodeResources
+        dst: ghl Desktop.app/Contents/_CodeSignature
+        strip_parent: true
+        info:
+          mtime: '{{ .CommitDate }}'
+      - src: LICENSE
+        info:
+          mtime: '{{ .CommitDate }}'
+      - src: .task/desktop/THIRD_PARTY_NOTICES.txt
         strip_parent: true
         info:
           mtime: '{{ .CommitDate }}'

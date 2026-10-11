@@ -6,18 +6,48 @@ vars:
 tasks:
   desktop:build:
     desc: Build the macOS desktop app
+    vars:
+      LOCAL_BUILD_VERSION:
+        sh: node -p 'process.env.GHL_BUILD_VERSION ?? require("./package.json").version'
+      LOCAL_BUILD_COMMIT:
+        sh: git rev-parse HEAD
+      LOCAL_BUILD_DATE:
+        sh: git show -s --format=%cI HEAD
+      # Preserve explicit GoReleaser values; task-local constants override CLI vars.
+      BUILD_VERSION: '{{.BUILD_VERSION | default .LOCAL_BUILD_VERSION}}'
+      BUILD_COMMIT: '{{.BUILD_COMMIT | default .LOCAL_BUILD_COMMIT}}'
+      BUILD_DATE: '{{.BUILD_DATE | default .LOCAL_BUILD_DATE}}'
+      LDFLAGS: >-
+        -s -w
+        -X github.com/vmaerten/ghl/internal/app.version={{.BUILD_VERSION}}
+        -X github.com/vmaerten/ghl/internal/app.commit={{.BUILD_COMMIT}}
+        -X github.com/vmaerten/ghl/internal/app.buildDate={{.BUILD_DATE}}
     preconditions:
       - sh: '[ "{{OS}}" = darwin ]'
         msg: The desktop app currently targets macOS
+      - sh: '[ "{{ARCH}}" = arm64 ]'
+        msg: The desktop app currently targets Apple Silicon
+      - sh: '{{and (regexMatch `^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$` .BUILD_VERSION) (regexMatch `^[a-f0-9]{40}$` .BUILD_COMMIT) (regexMatch `^[0-9T:+.Z-]+$` .BUILD_DATE)}}'
+        msg: Invalid desktop build metadata
     cmds:
       - pnpm exec vite build --mode go-desktop --outDir ../desktop/assets
       - touch desktop/assets/.gitkeep
       - mkdir -p '.task/desktop/ghl Desktop.app/Contents/MacOS'
       - >-
         CGO_ENABLED=1 CGO_LDFLAGS='-framework UniformTypeIdentifiers'
-        go -C desktop build -tags production -trimpath -ldflags='-s -w'
+        go -C desktop build -tags production -trimpath -ldflags={{.LDFLAGS | shellQuote}}
         -o '../.task/desktop/ghl Desktop.app/Contents/MacOS/ghl-desktop' .
       - cp desktop/Info.plist '.task/desktop/ghl Desktop.app/Contents/Info.plist'
+      - >-
+        plutil -replace CFBundleShortVersionString -string
+        {{regexReplaceAll `-.*$` .BUILD_VERSION "" | shellQuote}}
+        '.task/desktop/ghl Desktop.app/Contents/Info.plist'
+      - >-
+        plutil -replace GHLReleaseVersion -string {{.BUILD_VERSION | shellQuote}}
+        '.task/desktop/ghl Desktop.app/Contents/Info.plist'
+      - >-
+        plutil -replace GHLCommit -string {{.BUILD_COMMIT | shellQuote}}
+        '.task/desktop/ghl Desktop.app/Contents/Info.plist'
       - codesign --force --deep --sign - '.task/desktop/ghl Desktop.app'
 
   desktop:run:
@@ -55,6 +85,7 @@ tasks:
     desc: Test desktop argument handling, shared backend and origin boundary
     cmds:
       - CGO_ENABLED=1 CGO_LDFLAGS='-framework UniformTypeIdentifiers' go -C desktop test -race ./...
+      - python3 -m unittest discover -s desktop -p 'test_release.py'
 
   desktop:smoke:
     desc: Exercise the real native window, clipboard and instance reuse on fixtures
@@ -281,6 +312,7 @@ tasks:
     cmds:
       - node test/goRelease.ts
       - node test/releaseGuards.ts
+      - python3 desktop/release.py verify
 
   release:acceptance:
     desc: Run contract, lifecycle and browser suites against the release archive
