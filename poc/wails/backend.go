@@ -153,11 +153,6 @@ func (b *reviewBackend) handler() http.Handler {
 			http.Error(w, "unexpected desktop origin", http.StatusForbidden)
 			return
 		}
-		if r.URL.Path == "/" {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			fmt.Fprint(w, `<!doctype html><html><head><meta charset="utf-8"><title>ghl</title></head><body style="background:#22272e;color:#adbac7;font:16px system-ui;padding:48px"><h1>ghl</h1><p>Opening your review…</p><p>Open another repository with File → Open repository (⌘O).</p></body></html>`)
-			return
-		}
 		proxy.ServeHTTP(w, r)
 	})
 }

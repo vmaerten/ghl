@@ -90,11 +90,14 @@ def main():
                 # Resolve the Unicode path relative to the second caller, not the app cwd.
                 subprocess.run([str(binary), '--base', 'HEAD', '--repo', second.name], cwd=folder, env=env, stdout=log, stderr=log, check=True, timeout=10)
                 selected = wait(server, 'second')
-                assert selected['pid'] == app.pid and not selected['minimized']
+                assert selected['pid'] == app.pid and not selected['minimized'] and selected['tabs'] == 2
                 checkpoint = len(server.events)
-                subprocess.run([str(binary), '--repo', str(first), '--base', 'HEAD'], env=env, stdout=log, stderr=log, check=True, timeout=30)
+                time.sleep(.2)
+                subprocess.run([str(binary), '--repo', str(second), '--base', 'HEAD'], env=env, stdout=log, stderr=log, check=True, timeout=10)
+                duplicate = wait(server, 'same-tab', checkpoint)
+                assert duplicate['tabs'] == 2 and duplicate['mountedReviews'] == 1
                 restored = wait(server, 'restored', checkpoint)
-                assert restored['pid'] == app.pid and restored['repos'] == 2
+                assert restored['pid'] == app.pid and restored['repos'] == 2 and restored['tabs'] == 1
                 app.send_signal(signal.SIGTERM)
                 app.wait(timeout=15)
                 assert app.returncode == 0
@@ -103,10 +106,13 @@ def main():
                 restarted = wait(server, 'restored', checkpoint)
                 assert restarted['pid'] == app.pid and restarted['pid'] != initial['pid']
                 assert restarted['repos'] == 1
+                empty = wait(server, 'empty', checkpoint)
+                assert empty['tabs'] == 0 and empty['mountedReviews'] == 0 and empty['welcome']
+                assert app.poll() is None
                 app.send_signal(signal.SIGTERM)
                 app.wait(timeout=15)
                 assert app.returncode == 0
-                report = {'complete': True, 'standalone': args.standalone, 'checks': ['native rendering', 'context expansion', 'UI comment create/edit/delete', 'OS Markdown clipboard', 'Viewed', 'relative Unicode path from second caller', 'same process/window reuse', 'unminimise', 'switch back', 'shutdown', 'restart persistence'], 'events': server.events}
+                report = {'complete': True, 'standalone': args.standalone, 'checks': ['native rendering', 'context expansion', 'UI comment create/edit/delete', 'OS Markdown clipboard', 'Viewed', 'relative Unicode path from second caller', 'same process/window reuse', 'unminimise', 'switch back', 'shutdown', 'restart persistence', 'CLI tab deduplication', 'UI close tab', 'one mounted review', 'close last tab keeps window'], 'events': server.events}
                 (ROOT / '.task/wails/validation.json').write_text(json.dumps(report, indent=2))
                 print(json.dumps({'complete': True, 'checks': report['checks'], 'report': '.task/wails/validation.json'}))
             finally:

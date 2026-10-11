@@ -1,4 +1,4 @@
-import { useMemo, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useSyncExternalStore } from 'react'
 
 interface SelectionAdapter {
   replaceUrl: (url: URL) => void
@@ -34,9 +34,11 @@ export function createReviewSelection(initialUrl: URL, adapter: SelectionAdapter
   let url = new URL(initialUrl)
   let snapshot = describe(url)
   let baseRequest = 0
+  let active = true
   let baseWrite = Promise.resolve()
   const listeners = new Set<() => void>()
   const update = (change: (params: URLSearchParams) => void) => {
+    if (!active) return
     const next = new URL(url)
     change(next.searchParams)
     adapter.replaceUrl(next)
@@ -51,6 +53,10 @@ export function createReviewSelection(initialUrl: URL, adapter: SelectionAdapter
     })
 
   return {
+    setActive: (value: boolean) => {
+      active = value
+      if (!value) baseRequest++
+    },
     getSnapshot: () => snapshot,
     subscribe: (listener: () => void) => {
       listeners.add(listener)
@@ -98,5 +104,9 @@ export function useReviewSelection(repoId: string | null) {
       }),
     [repoId],
   )
+  useEffect(() => {
+    selection.setActive(true)
+    return () => selection.setActive(false)
+  }, [selection])
   return [useSyncExternalStore(selection.subscribe, selection.getSnapshot), selection] as const
 }
