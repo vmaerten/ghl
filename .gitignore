@@ -8,3 +8,10 @@ go/cmd/*/assets/*
 !go/cmd/*/assets/.gitkeep
 .task/
 .pnpm-store/
+__pycache__/
+poc/wails/assets/*
+!poc/wails/assets/.gitkeep
+poc/desktop-bench/*/dist/
+poc/desktop-bench/*/.build/
+poc/desktop-bench/*/target/
+poc/desktop-bench/tauri/gen/
