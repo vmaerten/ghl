@@ -144,6 +144,11 @@ prototype. Tests do not open
 your personal Chrome or mutate a real repository. The clipboard check writes
 fixture Markdown to the system clipboard.
 
+During the local demonstration, a second invocation sent while the first window
+was still bootstrapping was not registered; retrying after the window was ready
+worked. Concurrent cold launches are not yet guaranteed by the Wails notification
+path. Wait for the first window before sending another review during this prototype.
+
 This is a usable prototype, not a signed/notarised release or an updater. Builds
 are manual/local, with no CI or publication. Native hot reload is not configured;
 the existing `task dev` remains available for browser development. Quit the
