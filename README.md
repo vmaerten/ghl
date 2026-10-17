@@ -11,6 +11,10 @@ runtime prerequisites. The published v0.1.0 contains macOS ARM64 only; the added
 platform archives require a subsequent release and their platform acceptance gate.
 See the [installation guide](./docs/installation.md).
 
+A [Wails desktop prototype](./poc/wails/README.md) opens the same review UI in a
+single reusable native window: `task wails:run -- --repo .`. It is optional and
+keeps the installed browser CLI separate.
+
 | key       | action                           |
 | --------- | -------------------------------- |
 | `j` / `k` | next / previous file             |
