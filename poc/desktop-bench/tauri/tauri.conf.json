@@ -1,0 +1,8 @@
+{
+  "productName": "GHLDesktopBenchTauri",
+  "version": "0.0.0",
+  "identifier": "dev.ghl.desktopbench.tauri",
+  "build": { "frontendDist": "../empty" },
+  "app": { "windows": [] },
+  "bundle": { "active": false }
+}

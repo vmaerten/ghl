@@ -4,6 +4,24 @@ vars:
   AIR_VERSION: v1.62.0
 
 tasks:
+  desktop:build:
+    desc: Build the isolated desktop envelope benchmark (macOS ARM64)
+    cmds:
+      - task: build
+      - python3 poc/desktop-bench/build.py
+
+  desktop:bench:
+    desc: Compare Electron, Tauri, Wails and TinyJS locally (no CI)
+    cmds:
+      - task: desktop:build
+      - python3 poc/desktop-bench/run.py
+
+  desktop:chrome:
+    desc: Measure isolated Chrome tabs and tab reuse (-- --chrome <executable>)
+    cmds:
+      - task: build
+      - python3 poc/desktop-bench/chrome.py {{.CLI_ARGS}}
+
   default:
     cmds:
       - task --list

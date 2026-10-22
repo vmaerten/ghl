@@ -1,0 +1,10 @@
+{
+  "name": "GHLDesktopBenchTinyJS",
+  "title": "ghl desktop benchmark — TinyJS",
+  "size": "1280x720",
+  "id": "dev.ghl.desktopbench.tinyjs",
+  "version": "0.0.0",
+  "debug": false,
+  "offscreenRescue": false,
+  "windowPlacement": false
+}
